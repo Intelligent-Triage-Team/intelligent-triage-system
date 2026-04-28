@@ -1,19 +1,30 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { useNavigate } from "react-router-dom";
+
+
 
 function AdminDashboard() {
-    
+    const navigate = useNavigate();
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    API.get("/admin/stats")
+    API.get("/admin/stats", {
+  headers: {
+    Authorization: localStorage.getItem("token")
+  }
+})
   .then(res => setStats(res.data))
       .catch(err => console.error(err));
   }, []);
 const [users, setUsers] = useState([]);
     useEffect(() => {
-  API.get("/admin/users")
+  API.get("/admin/users", {
+  headers: {
+    Authorization: localStorage.getItem("token")
+  }
+})
   .then(res => setUsers(res.data))
     .catch(err => console.error(err));
 }, []);
@@ -54,6 +65,7 @@ const updateRole = async (id, newRole) => {
 
     // find the user first
     const selectedUser = users.find(u => u.id === id);
+    if (!selectedUser) return;
 
     // 🔒 Prevent changing admin
     if (selectedUser.role === "admin") {
@@ -79,28 +91,28 @@ const data = res.data; // ✅
   }
 };
   return (
-    <div className="dashboard">
+    <div className="dashboard bg-gray-100 min-h-screen p-6">
 
       <h1>Admin Dashboard</h1>
 
-      <div className="card-container">
+      <div className="card-container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-6">
 
-<div className="dashboard-card">
-  <h3>Total Users</h3>
-  <p>{stats.total_users}</p>
+<div className="dashboard-card bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition">
+  <h3 className="text-gray-500 text-sm">Total Users</h3>
+<p className="text-2xl font-bold mt-2">{stats.total_users}</p>
 </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition">
           <h3>Patients</h3>
           <p>{stats.total_patients}</p>
         </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition">
           <h3>Doctors</h3>
           <p>{stats.total_doctors}</p>
         </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition">
           <h3>Appointments</h3>
           <p>{stats.total_appointments}</p>
         </div>
@@ -166,7 +178,21 @@ const data = res.data; // ✅
 <h2 style={{ textAlign: "center", marginTop: "50px" }}>
   User Management
 </h2>
-{users.length === 0 && <p>No users found</p>}
+
+<div style={{ textAlign: "right", marginBottom: "10px" }}>
+  <button 
+    className="btn-add"
+    onClick={() => navigate("/add-doctor")}
+  >
+    + Add Doctor
+  </button>
+</div>
+
+{users.length === 0 && (
+  <p style={{ textAlign: "center", marginTop: "20px" }}>
+    No users found
+  </p>
+)}
 <div className="container">
   <table>
     <thead>
@@ -177,6 +203,7 @@ const data = res.data; // ✅
         <th>Role</th>
         <th>Action</th>
       </tr>
+      
     </thead>
 
     <tbody>
@@ -186,24 +213,57 @@ const data = res.data; // ✅
           <td>{user.name}</td>
           <td>{user.email}</td>
           <td>
-  <select
-    value={user.role}
-    disabled={user.role === "admin"}
-    onChange={(e) => updateRole(user.id, e.target.value)}
-  >
-    <option value="patient">Patient</option>
-    <option value="doctor">Doctor</option>
-    <option value="admin">Admin</option>
-  </select>
+  {user.role === "doctor" ? (
+    <span style={{ color: "green", fontWeight: "bold" }}>
+      Doctor
+    </span>
+  ) : (
+    <select
+      value={user.role}
+      disabled={user.role === "admin"}
+      onChange={(e) => updateRole(user.id, e.target.value)}
+    >
+      <option value="patient">Patient</option>
+      <option value="admin">Admin</option>
+    </select>
+  )}
 </td>
-          <td>
-            <button onClick={() => deleteUser(user)}>Delete</button>
-          </td>
+         <td>
+  {user.role === "doctor" && user.doctor_id && (
+  <button 
+  onClick={() => navigate(`/edit-doctor/${user.doctor_id}`)}
+  style={{
+    background: "#3498db",
+    color: "white",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "5px",
+    marginRight: "6px",
+    cursor: "pointer"
+  }}
+>
+  Edit
+</button>
+)}
+
+  <button onClick={() => deleteUser(user)}>
+    Delete
+  </button>
+</td>
         </tr>
       ))}
+      
     </tbody>
   </table>
 </div>
+
+
+<button 
+  className="btn-add"
+  onClick={() => navigate("/add-doctor")}
+>
+  + Add Doctor
+</button>
     </div>
   );
 }

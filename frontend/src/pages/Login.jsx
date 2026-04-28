@@ -20,43 +20,39 @@ const [showPassword, setShowPassword] = useState(false);
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const res = await API.post("/login", formData);
+  try {
+    const res = await API.post("/login", formData);
 
-      const token = res.data.token;
+    const token = res.data.token;
 
-      // ✅ Save token
-      localStorage.setItem("token", token);
+    // ✅ Save token + user
+    localStorage.setItem("token", token);
 
-      // ✅ Decode token
-      const decoded = jwtDecode(token);
-      // ✅ Save user info
-// localStorage.setItem("user", JSON.stringify(decoded));
+    const decoded = jwtDecode(token);
+    localStorage.setItem("user", JSON.stringify(decoded));
 
-localStorage.setItem("token", token);
-localStorage.setItem("user", JSON.stringify(decoded));
-window.location.reload();
-
-      alert("Login successful");
-
-      // ✅ Redirect based on role
-      if (decoded.role === "admin") {
-        navigate("/admin");
-      } else if (decoded.role === "doctor") {
-        navigate("/doctor");
-      } else {
-        navigate("/predict");
-      }
-
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.message || "Login failed");
+    // ✅ Redirect based on role
+    if (decoded.role === "admin") {
+      navigate("/admin");
+    } else if (decoded.role === "doctor") {
+      navigate("/doctor");
+    } else {
+      navigate("/predict");
     }
-    
-  };
+
+    // ✅ Refresh page AFTER redirect (for navbar update)
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+
+  } catch (error) {
+    console.error(error);
+    alert(error.response?.data?.message || "Login failed");
+  }
+};
 
   return (
     <div className="container">
@@ -105,7 +101,21 @@ window.location.reload();
       <p>
   Forgot Password? <a href="/forgot">Click here</a>
 </p>
+<p style={{ marginTop: "10px" }}>
+  Don't have an account?{" "}
+  <span
+    onClick={() => navigate("/signup")}
+    style={{
+      color: "#1abc9c",
+      cursor: "pointer",
+      fontWeight: "600"
+    }}
+  >
+    Signup
+  </span>
+</p>
     </div>
+    
   );
 }
 
