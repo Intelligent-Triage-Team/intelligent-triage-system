@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from nlp_processor import extract_symptoms
 import joblib
 
 triage_map = {
@@ -45,86 +46,31 @@ def home():
 def health():
     return jsonify({"status": "ML service running"})
 
-
-# @app.route("/predict", methods=["POST"])
-# def predict():
-
-#     data = request.get_json()
-
-#     # symptoms = data.get("symptoms", [])
-    
-
-# symptoms_text = data.get("symptoms", "").lower()
-
-# # split into words
-# words = symptoms_text.split()
-
-# # create 2-word combinations
-# symptoms = []
-# for i in range(len(words)):
-#     symptoms.append(words[i])
-#     if i < len(words) - 1:
-#         symptoms.append(words[i] + "_" + words[i+1])
-
-#     # encode symptoms
-#     encoded = encoder.transform([symptoms])
-
-#     # predict disease
-#     prediction = model.predict(encoded)
-#     probabilities = model.predict_proba(encoded)
-
-#     disease = prediction[0]
-
-#     # confidence
-#     confidence = probabilities.max() * 100
-
-#     # top 3 predictions
-#     top3_idx = probabilities[0].argsort()[-3:][::-1]
-
-#     top3_diseases = model.classes_[top3_idx]
-#     top3_probs = probabilities[0][top3_idx] * 100
-
-#     triage_level = triage_map.get(disease, "Normal")
-
-#     # emergency override
-#     if any(sym in critical_symptoms for sym in symptoms):
-#         triage_level = "Emergency"
-
-#     return jsonify({
-#         "predicted_disease": disease,
-#         "confidence": round(confidence,2),
-#         "triage_level": triage_level,
-#         "top3_predictions": [
-#             {"disease": top3_diseases[0], "prob": round(top3_probs[0],2)},
-#             {"disease": top3_diseases[1], "prob": round(top3_probs[1],2)},
-#             {"disease": top3_diseases[2], "prob": round(top3_probs[2],2)}
-#         ]
-#     })
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
 
-    symptoms_text = data.get("symptoms", "").lower()
+    text = data.get("text", "").lower()
 
-    # split into words
-    words = symptoms_text.split()
+    symptoms = extract_symptoms(text)
+    print("Extracted Symptoms:", symptoms)
 
-    # create 2-word combinations
-    symptoms = []
-    for i in range(len(words)):
-        symptoms.append(words[i])
-        if i < len(words) - 1:
-            symptoms.append(words[i] + "_" + words[i+1])
+    if not symptoms:
+        return jsonify({"error": "No symptoms detected"})
 
-    # encode symptoms
-    encoded = encoder.transform([symptoms])
+    valid_symptoms = [s for s in symptoms if s in encoder.classes_]
+    print("Valid Symptoms:", valid_symptoms)
 
-    # predict disease
+    if not valid_symptoms:
+        return jsonify({"error": "No valid symptoms for prediction"})
+
+    encoded = encoder.transform([valid_symptoms])
+    print("Encoded shape:", encoded.shape)
+
     prediction = model.predict(encoded)
     probabilities = model.predict_proba(encoded)
 
     disease = prediction[0]
-
     # confidence
     confidence = probabilities.max() * 100
 

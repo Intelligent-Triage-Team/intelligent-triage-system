@@ -4,10 +4,12 @@ import API from "../api/api";
 function Signup() {
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: ""
-  });
+  name: "",
+  email: "",
+  password: "",
+  age: "",
+  gender: ""
+});
 
   const handleChange = (e) => {
     setFormData({
@@ -16,17 +18,27 @@ function Signup() {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      await API.post("/signup", formData);
-      alert("User registered successfully");
-    } catch (error) {
-      console.error(error);
-      alert("Registration failed");
-    }
-  };
+  if (!formData.name || !formData.email || !formData.password) {
+    alert("Please fill all required fields");
+    return;
+  }
+
+  if (!formData.age || !formData.gender) {
+    alert("Please enter age and select gender");
+    return;
+  }
+
+  try {
+    await API.post("/signup", formData);
+    alert("User registered successfully");
+  } catch (error) {
+    console.error(error);
+    alert("Registration failed");
+  }
+};
 
 return (
   <div className="container">
@@ -80,6 +92,26 @@ return (
   onChange={handleChange}
 />
       <br /><br />
+      <input
+  type="number"
+  name="age"
+  placeholder="Age"
+  value={formData.age}
+  onChange={handleChange}
+/>
+
+<br /><br />
+<select
+  name="gender"
+  value={formData.gender}
+  onChange={handleChange}
+>
+  <option value="">Select Gender</option>
+  <option value="male">Male</option>
+  <option value="female">Female</option>
+</select>
+
+<br /><br />
 
       <button type="submit">Signup</button>
 

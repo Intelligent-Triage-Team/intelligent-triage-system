@@ -1,26 +1,56 @@
 import { Navigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 function ProtectedRoute({ children, role }) {
 
   const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
+
+  let user = null;
+
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser && storedUser !== "undefined") {
+      user = JSON.parse(storedUser);
+    }
+  } catch (error) {
+    console.error("Invalid user data:", error);
+    return <Navigate to="/login" />;
+  }
 
   // ❌ Not logged in
   if (!token || !user) {
     return <Navigate to="/login" />;
   }
 
-  // ❌ Wrong role → smart redirect
+  // ❌ Token expired check
+  try {
+    const decoded = jwtDecode(token);
+    const currentTime = Date.now() / 1000;
+
+    if (decoded.exp < currentTime) {
+      localStorage.clear();
+      return <Navigate to="/login" />;
+    }
+  } catch (error) {
+    console.error("Invalid token:", error);
+    localStorage.clear();
+    return <Navigate to="/login" />;
+  }
+
+  // ❌ Role mismatch
   if (role && user.role !== role) {
 
-    if (user.role === "admin") {
-      return <Navigate to="/admin" />;
-    } 
-    else if (user.role === "doctor") {
-      return <Navigate to="/doctor" />;
-    } 
-    else {
-      return <Navigate to="/predict" />;
+    // Strict fallback (safer)
+    switch (user.role) {
+      case "admin":
+        return <Navigate to="/admin" />;
+      case "doctor":
+        return <Navigate to="/doctor" />;
+      case "patient":
+        return <Navigate to="/predict" />;
+      default:
+        return <Navigate to="/login" />;
     }
   }
 
