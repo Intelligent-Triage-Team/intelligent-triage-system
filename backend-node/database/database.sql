@@ -1,11 +1,11 @@
 -- Create Database
-CREATE DATABASE IF NOT EXISTS my_app_db;
-USE my_app_db;
+CREATE DATABASE IF NOT EXISTS healthcare_db;
+USE healthcare_db;
 
 -- =========================
 -- 1️⃣ USERS TABLE
 -- =========================
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- =========================
 -- 2️⃣ DOCTORS TABLE
 -- =========================
-CREATE TABLE IF NOT EXISTS doctors (
+CREATE TABLE doctors (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     specialization VARCHAR(100),
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS doctors (
 -- =========================
 -- 3️⃣ PATIENTS TABLE
 -- =========================
-CREATE TABLE IF NOT EXISTS patients (
+CREATE TABLE patients (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     age INT,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS patients (
 -- =========================
 -- 4️⃣ TRIAGE RESULTS (ML OUTPUT)
 -- =========================
-CREATE TABLE IF NOT EXISTS triage_results (
+CREATE TABLE triage_results (
     id INT PRIMARY KEY AUTO_INCREMENT,
     patient_id INT NOT NULL,
     predicted_disease VARCHAR(255),
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS triage_results (
 -- =========================
 -- 5️⃣ APPOINTMENTS TABLE
 -- =========================
-CREATE TABLE IF NOT EXISTS appointments (
+CREATE TABLE appointments (
     id INT PRIMARY KEY AUTO_INCREMENT,
     patient_id INT NOT NULL,
     doctor_id INT NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 -- =========================
 -- 6️⃣ SYMPTOMS TABLE
 -- =========================
-CREATE TABLE IF NOT EXISTS symptoms (
+CREATE TABLE symptoms (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) UNIQUE NOT NULL
 );
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS symptoms (
 -- =========================
 -- 7️⃣ PATIENT SYMPTOMS (BRIDGE TABLE)
 -- =========================
-CREATE TABLE IF NOT EXISTS patient_symptoms (
+CREATE TABLE patient_symptoms (
     id INT PRIMARY KEY AUTO_INCREMENT,
     appointment_id INT NOT NULL,
     symptom_id INT NOT NULL,
