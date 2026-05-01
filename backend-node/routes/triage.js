@@ -41,9 +41,10 @@ router.get("/triage-queue", authenticateToken, async (req, res) => {
     const doctorId = doctor[0].id;
 
     const sql = `
-      SELECT 
-        t.id AS triage_id,
-        u.name AS patient_name,
+      SELECT  
+  t.id AS triage_id,
+  p.id AS patient_id,
+  u.name AS patient_name,
         t.predicted_disease,
         t.status,
         t.severity,
@@ -76,6 +77,42 @@ AND (a.status = 'scheduled' OR a.status IS NULL)
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+router.get("/patient/:id/profile", authenticateToken, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+
+    const [rows] = await db.promise().query(
+  `
+  SELECT 
+    p.id AS patient_id,
+    u.name,
+    u.email,
+    p.age,
+    p.gender,
+    p.blood_group,
+    p.weight,
+    p.height,
+    p.allergies,
+    p.chronic_disease,
+    p.emergency_contact
+  FROM patients p
+  JOIN users u ON p.user_id = u.id
+  WHERE p.id = ?
+  `,
+  [patientId]
+);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    res.json(rows[0]);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

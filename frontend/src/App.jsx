@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ResultPage from "./pages/patientdb/ResultPage";
 import HistoryPage from "./pages/patientdb/HistoryPage";
+import ProfilePage from "./pages/patientdb/ProfilePage";
 import AddDoctor from "./pages/doctor/AddDoctor";
 import EditDoctor from "./pages/doctor/EditDoctor";
 import { ToastContainer } from "react-toastify";
@@ -102,6 +103,7 @@ const [showNotif, setShowNotif] = useState(false);
       <Link to="/predict">New Check</Link>
       <Link to="/result">Result</Link>
       <Link to="/history">History</Link>
+      <Link to="/profile">Profile</Link>
     </>
   )}
 
@@ -299,6 +301,14 @@ const [showNotif, setShowNotif] = useState(false);
   element={
     <ProtectedRoute role="admin">
       <EditDoctor />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/profile"
+  element={
+    <ProtectedRoute role="patient">
+      <ProfilePage />
     </ProtectedRoute>
   }
 />

@@ -10,8 +10,12 @@ function DoctorDashboard() {
   available_from: "",
   available_to: ""
 });
-
+const [selectedPatient, setSelectedPatient] = useState(null);
+const [showProfile, setShowProfile] = useState(false);
+const [patientHistory, setPatientHistory] = useState([]);
 const patientsPerPage = 10;
+const [profileHistory, setProfileHistory] = useState([]);
+
 const completeCase = async (triageId) => {
   try {
     const token = localStorage.getItem("token");
@@ -150,6 +154,51 @@ const updateAvailability = async () => {
   } catch (error) {
     console.error(error);
     setSuccessMsg("❌ Update failed");
+  }
+};
+const viewPatientProfile = async (patientId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const profileRes = await API.get(`/patient/${patientId}/profile`, {
+      headers: { Authorization: token }
+    });
+
+    const triageRes = await API.get(`/patients/${patientId}/history`, {
+      headers: { Authorization: token }
+    });
+
+    const historyRes = await API.get(`/patient/${patientId}/profile-history`, {
+      headers: { Authorization: token }
+    });
+
+    setSelectedPatient(profileRes.data);
+    setPatientHistory(triageRes.data);
+    setProfileHistory(historyRes.data);
+
+    setShowProfile(true);
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+const updateMedicalInfo = async () => {
+  try {
+    await API.put(
+      `/patient/${selectedPatient.patient_id}/medical`,
+      selectedPatient,
+      {
+        headers: {
+          Authorization: localStorage.getItem("token")
+        }
+      }
+    );
+
+    alert("Medical info updated successfully");
+
+  } catch (error) {
+    console.error(error);
+    alert("Update failed");
   }
 };
 return (
@@ -394,7 +443,18 @@ return (
   >
     {p.status === "completed" ? "Completed" : "Complete"}
   </button>
-
+<button
+  onClick={() => viewPatientProfile(p.patient_id)}
+  style={{
+    background: "#8e44ad",
+    color: "white",
+    border: "none",
+    padding: "6px",
+    borderRadius: "5px"
+  }}
+>
+  Dtailes
+</button>
 </td>
 </tr>
 
@@ -446,6 +506,219 @@ return (
     Next
   </button>
 </div>
+{showProfile && selectedPatient && (
+  <div style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999
+  }}>
+    <div style={{
+      background: "white",
+      padding: "25px",
+      borderRadius: "12px",
+      width: "900px",
+      maxWidth: "95%",
+      maxHeight: "90vh",
+      overflowY: "auto"
+    }}>
+
+      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+        Patient Overview
+      </h2>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1.3fr",
+        gap: "25px"
+      }}>
+
+        {/* LEFT PROFILE */}
+        <div>
+          <h3>Profile</h3>
+          <p><b>Name:</b> {selectedPatient.name}</p>
+          <p><b>Email:</b> {selectedPatient.email}</p>
+          <p><b>Age:</b> {selectedPatient.age}</p>
+          <p><b>Gender:</b> {selectedPatient.gender}</p>
+          <p><b>Blood:</b> {selectedPatient.blood_group || "-"}</p>
+          <p><b>Weight:</b> {selectedPatient.weight || "-"}</p>
+          <p><b>Height:</b> {selectedPatient.height || "-"}</p>
+          <p><b>Allergies:</b> {selectedPatient.allergies || "-"}</p>
+          <p><b>Chronic:</b> {selectedPatient.chronic_disease || "-"}</p>
+          <p><b>Contact:</b> {selectedPatient.emergency_contact || "-"}</p>
+          
+          <div>
+            <br /><br />
+  <h3>Patient Info</h3>
+
+  <p><b>Name:</b> {selectedPatient.name}</p>
+  <p><b>Email:</b> {selectedPatient.email}</p>
+  <p><b>Age:</b> {selectedPatient.age}</p>
+  <p><b>Gender:</b> {selectedPatient.gender}</p>
+  
+
+  <hr style={{ margin: "15px 0" }} />
+
+  <h3>Edit Medical Info</h3>
+
+  <input
+    placeholder="Blood Group"
+    value={selectedPatient.blood_group || ""}
+    onChange={(e) =>
+      setSelectedPatient({
+        ...selectedPatient,
+        blood_group: e.target.value
+      })
+    }
+  /><br /><br />
+
+  <input
+    placeholder="Weight"
+    value={selectedPatient.weight || ""}
+    onChange={(e) =>
+      setSelectedPatient({
+        ...selectedPatient,
+        weight: e.target.value
+      })
+    }
+  /><br /><br />
+
+  <input
+    placeholder="Height"
+    value={selectedPatient.height || ""}
+    onChange={(e) =>
+      setSelectedPatient({
+        ...selectedPatient,
+        height: e.target.value
+      })
+    }
+  /><br /><br />
+
+  <input
+    placeholder="Allergies"
+    value={selectedPatient.allergies || ""}
+    onChange={(e) =>
+      setSelectedPatient({
+        ...selectedPatient,
+        allergies: e.target.value
+      })
+    }
+  /><br /><br />
+
+  <input
+    placeholder="Chronic Disease"
+    value={selectedPatient.chronic_disease || ""}
+    onChange={(e) =>
+      setSelectedPatient({
+        ...selectedPatient,
+        chronic_disease: e.target.value
+      })
+    }
+  /><br /><br />
+
+  <input
+    placeholder="Emergency Contact"
+    value={selectedPatient.emergency_contact || ""}
+    onChange={(e) =>
+      setSelectedPatient({
+        ...selectedPatient,
+        emergency_contact: e.target.value
+      })
+    }
+  /><br /><br />
+
+  <button onClick={updateMedicalInfo}>
+    Save Medical Info
+  </button>
+</div>
+<hr style={{ margin: "20px 0" }} />
+
+<h3>Profile Update History</h3>
+
+{profileHistory.length === 0 ? (
+  <p>No profile changes found.</p>
+) : (
+  profileHistory.map((item, index) => (
+    <div
+      key={index}
+      style={{
+        background: "#f8f9fa",
+        padding: "10px",
+        borderRadius: "8px",
+        marginBottom: "10px"
+      }}
+    >
+      <p><b>Date:</b> {new Date(item.updated_at).toLocaleString()}</p>
+      <p><b>Weight:</b> {item.weight || "-"}</p>
+      <p><b>Height:</b> {item.height || "-"}</p>
+      <p><b>Blood Group:</b> {item.blood_group || "-"}</p>
+      <p><b>Allergies:</b> {item.allergies || "-"}</p>
+    </div>
+  ))
+)}
+        </div>
+        
+
+        {/* RIGHT HISTORY */}
+        <div>
+          <h3>History</h3>
+
+          {patientHistory.length === 0 ? (
+            <p>No history found.</p>
+          ) : (
+            patientHistory.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: "10px",
+                  marginBottom: "10px",
+                  borderRadius: "8px",
+                  background: "#f8f9fa",
+                  borderLeft:
+                    item.severity === "emergency"
+                      ? "4px solid red"
+                      : item.severity === "urgent"
+                      ? "4px solid orange"
+                      : "4px solid green"
+                }}
+              >
+                <p><b>Disease:</b> {item.predicted_disease}</p>
+                <p><b>Severity:</b> {item.severity}</p>
+                <p><b>Confidence:</b> {item.prediction_confidence}</p>
+                <p><b>Appointment:</b> {item.appointment_date
+                  ? new Date(item.appointment_date).toLocaleString()
+                  : "-"}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+      </div>
+
+      <button
+        onClick={() => setShowProfile(false)}
+        style={{
+          marginTop: "20px",
+          width: "100%",
+          padding: "10px",
+          background: "#e74c3c",
+          color: "white",
+          border: "none",
+          borderRadius: "6px"
+        }}
+      >
+        Close
+      </button>
+
+    </div>
+  </div>
+)}
     </div>
     
   );
