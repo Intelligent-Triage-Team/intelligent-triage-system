@@ -534,3 +534,178 @@ tr:hover{
 .read-the-docs {
   color: #888;
 } */
+/* ================= GLOBAL ================= */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f8fafc;
+}
+
+/* ================= NAVBAR ================= */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 40px;
+  background: #0f172a;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: 0.3s;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.navbar.scrolled {
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+}
+
+/* NAV SECTIONS */
+.nav-left,
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* LINKS */
+.nav-link {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: 0.3s;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: #38bdf8;
+}
+
+/* underline animation */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 0%;
+  height: 2px;
+  background: #38bdf8;
+  transition: 0.3s;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* ================= NOTIFICATIONS ================= */
+.notif-wrapper {
+  position: relative;
+}
+
+.notif-icon {
+  cursor: pointer;
+  font-size: 18px;
+  position: relative;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: red;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 280px;
+  background: white;
+  color: black;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.notif-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.notif-item:hover {
+  background: #f1f5f9;
+}
+
+.unread {
+  background: #e0f2fe;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 10px;
+  text-align: center;
+}
+
+/* ================= BUTTON ================= */
+.logout-btn {
+  background: #ef4444;
+  border: none;
+  color: white;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
+/* ================= TITLE ================= */
+.page-title {
+  text-align: center;
+  margin: 25px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.page-title{
+  text-align: center;
+  margin: 0px 0;
+  font-size: 50px;
+  font-weight: 600;
+  color: #1e293b;
+  background-color: #1abc9c;
+}
+.nav-left{
+  padding-left: 100px;
+  
+}
+.nav-right{
+  padding-right: 50px;
+}
+.logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  margin-right: 15px;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+

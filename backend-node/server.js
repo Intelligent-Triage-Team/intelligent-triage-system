@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("./database/db");
 const cors = require("cors");
 // const axios = require("axios");
+const axios = require("axios");
 // const auth = require("./middleware/auth");
 // const authenticateToken = require("./middleware/auth");
 // const jwt = require("jsonwebtoken");
@@ -9,11 +10,7 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 // const SECRET_KEY = "mysecretkey";
 
-
-
-
 const app = express();
-
 
 // import nodemailer from "nodemailer";
 // import crypto from "crypto";

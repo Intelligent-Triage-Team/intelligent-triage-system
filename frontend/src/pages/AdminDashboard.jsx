@@ -2,9 +2,6 @@ import { useEffect, useState } from "react";
 import API from "../api/api";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { useNavigate } from "react-router-dom";
-
-
-
 function AdminDashboard() {
     const navigate = useNavigate();
   const [stats, setStats] = useState(null);
@@ -31,17 +28,17 @@ const [users, setUsers] = useState([]);
 const deleteUser = async (user) => {
   try {
 
-    // 1️⃣ Prevent deleting admin
+    // Prevent deleting admin
     if (user.role === "admin") {
       alert("Cannot delete admin");
       return;
     }
 
-    // 2️⃣ Confirmation popup
+    // Confirmation popup
     if (!window.confirm("Are you sure you want to delete this user?")) return;
 
     const res = await API.delete(`/admin/user/${user.id}`);
-const data = res.data; // ✅
+const data = res.data; // 
 
     alert(data.message);
 
@@ -67,7 +64,7 @@ const updateRole = async (id, newRole) => {
     const selectedUser = users.find(u => u.id === id);
     if (!selectedUser) return;
 
-    // 🔒 Prevent changing admin
+    // Prevent changing admin
     if (selectedUser.role === "admin") {
       alert("Cannot change admin role");
       return;
@@ -77,7 +74,7 @@ const updateRole = async (id, newRole) => {
   role: newRole
 });
 
-const data = res.data; // ✅
+const data = res.data; // 
 
     alert(data.message);
 
@@ -93,7 +90,7 @@ const data = res.data; // ✅
   return (
     <div className="dashboard bg-gray-100 min-h-screen p-6">
 
-      <h1>Admin Dashboard</h1>
+      <h2>Admin Dashboard</h2>
 
       <div className="card-container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-6">
 

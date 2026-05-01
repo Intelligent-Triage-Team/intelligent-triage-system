@@ -28,13 +28,13 @@ const [showPassword, setShowPassword] = useState(false);
 
     const token = res.data.token;
 
-    // ✅ Save token + user
+    // Save token + user
     localStorage.setItem("token", token);
 
     const decoded = jwtDecode(token);
     localStorage.setItem("user", JSON.stringify(decoded));
 
-    // ✅ Redirect based on role
+    // Redirect based on role
     if (decoded.role === "admin") {
       navigate("/admin");
     } else if (decoded.role === "doctor") {
@@ -43,7 +43,7 @@ const [showPassword, setShowPassword] = useState(false);
       navigate("/predict");
     }
 
-    // ✅ Refresh page AFTER redirect (for navbar update)
+    // Refresh page AFTER redirect (for navbar update)
     setTimeout(() => {
       window.location.reload();
     }, 100);
@@ -72,11 +72,11 @@ const [showPassword, setShowPassword] = useState(false);
 
         <div style={{ position: "relative" }}>
   <input
-    type={showPassword ? "text" : "password"}   // 👈 ONLY this changes
+    type={showPassword ? "text" : "password"}   //  ONLY this changes
     name="password"
     placeholder="Password"
-    value={formData.password}                  // 👈 keep this SAME
-    onChange={handleChange}                    // 👈 keep this SAME
+    value={formData.password}                  //  keep this SAME
+    onChange={handleChange}                    //  keep this SAME
   />
 
   <span

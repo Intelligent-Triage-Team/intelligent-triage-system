@@ -5,7 +5,7 @@ USE healthcare_db;
 -- =========================
 -- 1️⃣ USERS TABLE
 -- =========================
-CREATE TABLE users (
+CREATE TABLE  IF NOT EXISTS users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE users (
 -- =========================
 -- 2️⃣ DOCTORS TABLE
 -- =========================
-CREATE TABLE doctors (
+CREATE TABLE  IF NOT EXISTS doctors (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     specialization VARCHAR(100),
@@ -29,7 +29,7 @@ CREATE TABLE doctors (
 -- =========================
 -- 3️⃣ PATIENTS TABLE
 -- =========================
-CREATE TABLE patients (
+CREATE TABLE  IF NOT EXISTS patients (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     age INT,
@@ -40,7 +40,7 @@ CREATE TABLE patients (
 -- =========================
 -- 4️⃣ TRIAGE RESULTS (ML OUTPUT)
 -- =========================
-CREATE TABLE triage_results (
+CREATE TABLE  IF NOT EXISTS triage_results (
     id INT PRIMARY KEY AUTO_INCREMENT,
     patient_id INT NOT NULL,
     predicted_disease VARCHAR(255),
@@ -53,7 +53,7 @@ CREATE TABLE triage_results (
 -- =========================
 -- 5️⃣ APPOINTMENTS TABLE
 -- =========================
-CREATE TABLE appointments (
+CREATE TABLE  IF NOT EXISTS appointments (
     id INT PRIMARY KEY AUTO_INCREMENT,
     patient_id INT NOT NULL,
     doctor_id INT NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE appointments (
 -- =========================
 -- 6️⃣ SYMPTOMS TABLE
 -- =========================
-CREATE TABLE symptoms (
+CREATE TABLE  IF NOT EXISTS symptoms (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) UNIQUE NOT NULL
 );
@@ -77,10 +77,22 @@ CREATE TABLE symptoms (
 -- =========================
 -- 7️⃣ PATIENT SYMPTOMS (BRIDGE TABLE)
 -- =========================
-CREATE TABLE patient_symptoms (
+CREATE TABLE  IF NOT EXISTS patient_symptoms (
     id INT PRIMARY KEY AUTO_INCREMENT,
     appointment_id INT NOT NULL,
     symptom_id INT NOT NULL,
     FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
     FOREIGN KEY (symptom_id) REFERENCES symptoms(id) ON DELETE CASCADE
+);
+-- 8️⃣ NOTIFICATIONS TABLE
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE
 );

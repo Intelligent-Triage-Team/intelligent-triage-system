@@ -24,7 +24,7 @@ const completeCase = async (triageId) => {
 
     alert("Case marked as completed");
 
-    fetchQueue(); // refresh table
+    fetchQueue(); 
 
   } catch (error) {
     console.error(error);
@@ -53,7 +53,7 @@ useEffect(() => {
 
   const interval = setInterval(() => {
     fetchQueue();
-  }, 5000); // refresh every 5 seconds
+  }, 5000); 
 
   return () => clearInterval(interval);
 }, []);
@@ -142,14 +142,14 @@ const updateAvailability = async () => {
       }
     );
 
-    setSuccessMsg("✅ Availability updated successfully");
+    setSuccessMsg(" Availability updated successfully");
 
     // auto hide after 3 sec
     setTimeout(() => setSuccessMsg(""), 3000);
 
   } catch (error) {
     console.error(error);
-    setSuccessMsg("❌ Update failed");
+    setSuccessMsg(" Update failed");
   }
 };
 return (

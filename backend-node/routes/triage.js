@@ -128,7 +128,7 @@ router.post("/predict", authenticateToken, async (req, res) => {
     const confidence = result.confidence;
     const severity = result.triage_level.toLowerCase();
 
-    // ✅ Insert triage
+    //Insert triage
     const [dbResult] = await db.promise().query(
       `INSERT INTO triage_results 
       (patient_id, predicted_disease, severity, prediction_confidence, status)
@@ -138,16 +138,16 @@ router.post("/predict", authenticateToken, async (req, res) => {
 
     const triageId = dbResult.insertId;
 
-    // ✅ Get doctors (smart ordering)
+    // Get doctors (smart ordering)
   const [doctors] = await db.promise().query(`
   SELECT 
     d.id,
-    u.name AS doctor_name,   -- ✅ get name from users
+    u.name AS doctor_name,   --  get name from users
     d.available_from,
     d.available_to,
     COUNT(a.id) AS total_cases
   FROM doctors d
-  JOIN users u ON d.user_id = u.id   -- ✅ JOIN
+  JOIN users u ON d.user_id = u.id   --  JOIN
   LEFT JOIN appointments a 
     ON d.id = a.doctor_id AND a.status = 'scheduled'
   GROUP BY d.id, u.name, d.available_from, d.available_to
@@ -169,7 +169,7 @@ let endTime = new Date(`${today}T${doctor.available_to}`);
   // clone startTime FIRST
   let appointmentDate = new Date(startTime);
 
-  // ✅ apply severity correctly
+  // apply severity correctly
   if (severity === "emergency") {
     // no delay
   } 
@@ -253,13 +253,13 @@ await db.promise().query(
    VALUES (?, ?)`,
   [userId, "Your appointment has been successfully scheduled!"]
 );
-    // ✅ FINAL RESPONSE
+    // FINAL RESPONSE
     res.json({
   message: "Prediction + Auto scheduled",
   prediction: result,
   triage_id: triageId,
   appointment: scheduled,
-  notification: "✅ Your appointment has been successfully scheduled!"
+  notification: " Your appointment has been successfully scheduled!"
 });
 
   } catch (error) {

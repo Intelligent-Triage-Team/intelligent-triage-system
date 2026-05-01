@@ -15,7 +15,7 @@ function EditDoctor() {
     available_to: ""
   });
 
-  // ✅ LOAD DATA
+  //  LOAD DATA
   useEffect(() => {
     const fetchDoctor = async () => {
       try {
@@ -25,7 +25,7 @@ function EditDoctor() {
           }
         });
 
-        setForm(res.data); // 🔥 AUTO-FILL
+        setForm(res.data); // 
 
       } catch (error) {
         console.error(error);

@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const db = require("../database/db");
-const authenticateToken = require("../middleware/auth"); // use your middleware file if exists
+const authenticateToken = require("../middleware/auth"); 
 
 router.get("/notifications", authenticateToken, async (req, res) => {
   try {

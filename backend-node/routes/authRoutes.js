@@ -6,48 +6,61 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 const SECRET_KEY = "mysecretkey";
+
+/* ================= LOGIN ================= */
 router.post("/login", (req, res) => {
+  const { email, password } = req.body;
 
- const { email, password } = req.body;
+  const sql = "SELECT * FROM users WHERE email = ?";
 
- const sql = "SELECT * FROM users WHERE email = ?";
+  db.query(sql, [email], async (err, results) => {
+    if (err) {
+      console.error("LOGIN ERROR:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
 
- db.query(sql, [email], async (err, results) => {
+    if (results.length === 0) {
+      return res.status(401).json({ message: "User not found" });
+    }
 
-   if (err) return res.status(500).json(err);
+    const user = results[0];
 
-   if (results.length === 0) {
-     return res.status(401).json({ message: "User not found" });
-   }
+    const validPassword = await bcrypt.compare(password, user.password);
 
-   const user = results[0];
+    if (!validPassword) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
 
-   const validPassword = await bcrypt.compare(password, user.password);
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
 
-   if (!validPassword) {
-     return res.status(401).json({ message: "Invalid password" });
-   }
-
-   const token = jwt.sign(
-     { id: user.id, role: user.role },
-     SECRET_KEY,
-     { expiresIn: "1h" }
-   );
-
-   res.json({
-     message: "Login successful",
-     token: token
-   });
-
- });
-
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  });
 });
-router.post("/signup", async (req, res) => {
 
+/* ================= SIGNUP ================= */
+router.post("/signup", async (req, res) => {
   const { name, email, password, age, gender } = req.body;
 
   try {
-    // ✅ 1. CHECK IF EMAIL EXISTS
+    // validate input
+    if (!name || !email || !password || !age || !gender) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // check duplicate email
     const [existing] = await db.promise().query(
       "SELECT * FROM users WHERE email = ?",
       [email]
@@ -57,93 +70,47 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // ✅ 2. HASH PASSWORD
+    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const role = "patient";
 
-    // ✅ 3. INSERT USER
-    const [userResult] = await db.promise().query(
+    // insert user
+    const [result] = await db.promise().query(
       "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
       [name, email, hashedPassword, role]
     );
 
-    const userId = userResult.insertId;
+    const userId = result.insertId;
 
-    // ✅ 4. INSERT PATIENT
+    // insert patient
     await db.promise().query(
       "INSERT INTO patients (user_id, age, gender) VALUES (?, ?, ?)",
       [userId, age, gender]
     );
 
-    res.json({ message: "User registered successfully" });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Signup failed" });
-  }
-
-});
-router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    const [users] = await db.promise().query(
-      "SELECT * FROM users WHERE email = ?", 
-      [email]
+    // create token immediately after signup
+    const token = jwt.sign(
+      { id: userId, role },
+      SECRET_KEY,
+      { expiresIn: "1h" }
     );
-
-    if (users.length === 0) {
-      return res.json({ message: "User not found" });
-    }
-
-    const token = Math.random().toString(36).substring(2);
-
-    await db.promise().query(
-      "UPDATE users SET reset_token = ? WHERE email = ?",
-      [token, email]
-    );
-
-    const resetLink = `http://localhost:5173/reset-password/${token}`;
 
     res.json({
-      message: "Reset link (copy and open)",
-      resetLink: resetLink
+      message: "User registered successfully",
+      token,
+      user: {
+        id: userId,
+        name,
+        email,
+        role
+      }
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error" });
+    console.error("SIGNUP ERROR:", error);
+    res.status(500).json({ message: "Signup failed", error: error.message });
   }
 });
-router.post("/reset-password/:token", async (req, res) => {
-  
-  const { token } = req.params;
 
-  const { password } = req.body;
-
-  try {
-    const [users] = await db.promise().query(
-      "SELECT * FROM users WHERE reset_token = ?",
-      [token]
-    );
-
-    if (users.length === 0) {
-      return res.json({ message: "Invalid token" });
-    }
-
-const hashedPassword = await bcrypt.hash(password, 10);
-
-await db.promise().query(
-  "UPDATE users SET password = ?, reset_token = NULL WHERE reset_token = ?",
-  [hashedPassword, token]
-);
-
-    res.json({ message: "Password reset successful" });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 module.exports = router;
