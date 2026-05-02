@@ -3,6 +3,32 @@ const router = express.Router();
 const db = require("../database/db");
 const authenticateToken = require("../middleware/auth");
 
+router.get("/doctors", async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT d.id, u.name, d.specialization, d.available_from, d.available_to
+      FROM doctors d
+      JOIN users u ON d.user_id = u.id
+    `);
+    
+    const formattedDoctors = rows.map(doc => {
+      // Basic availability heuristic: 4.8 default rating, pseudo-random available
+      return {
+        id: doc.id,
+        name: doc.name,
+        specialty: doc.specialization,
+        rating: 4.8 + (doc.id % 3) * 0.1, // mock a rating between 4.8 and 5.0
+        available: true // or calculate based on available_from/to
+      };
+    });
+    
+    res.json(formattedDoctors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.get("/doctor/:id/availability", (req, res) => {
 
   const doctorId = req.params.id;

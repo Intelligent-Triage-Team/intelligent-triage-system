@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import API from "../../api/api";
-// import { useLocation } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 
 function ResultPage() {
@@ -10,259 +9,195 @@ function ResultPage() {
   const [appointment, setAppointment] = useState(null);
 
   useEffect(() => {
+    if (location.state) {
+      setResult(location.state.result);
+      setAppointment(location.state.appointment);
+      return;
+    }
 
-  // ✅ use data from navigation (no delay)
-  if (location.state) {
-    setResult(location.state.result);
-    setAppointment(location.state.appointment);
-    return;
-  }
-
-  // ✅ fallback (if page refreshed)
-  const fetchData = async () => {
-    try {
-      const res = await API.get("/my-result", {
-        headers: {
-          Authorization: localStorage.getItem("token")
-        }
-      });
-
-      if (res.data) {
-        setResult({
-          predicted_disease: res.data.predicted_disease,
-          triage_level:
-            res.data.severity.charAt(0).toUpperCase() +
-            res.data.severity.slice(1),
-          confidence: res.data.prediction_confidence
+    const fetchData = async () => {
+      try {
+        const res = await API.get("/my-result", {
+          headers: { Authorization: localStorage.getItem("token") }
         });
 
-        setAppointment({
-  appointment_id: res.data.appointment_id,
-  doctor_name: res.data.doctor_name,
-  appointment_time: res.data.appointment_date
-});
-      }
+        if (res.data) {
+          setResult({
+            predicted_disease: res.data.predicted_disease,
+            triage_level: res.data.severity.charAt(0).toUpperCase() + res.data.severity.slice(1),
+            confidence: res.data.prediction_confidence
+          });
 
-    } catch (error) {
-      console.error(error);
+          setAppointment({
+            appointment_id: res.data.appointment_id,
+            doctor_name: res.data.doctor_name,
+            appointment_time: res.data.appointment_date
+          });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (!result) {
+    return (
+      <div className="loader-container">
+        <div className="spinner"></div>
+        <p>Analyzing your symptoms...</p>
+        <style jsx>{`
+          .loader-container { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; font-family: 'Inter', sans-serif; }
+          .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          p { color: #64748b; font-size: 1.1rem; font-weight: 500; }
+        `}</style>
+      </div>
+    );
+  }
+
+  const confidenceValue = (result.confidence > 1 ? result.confidence : result.confidence * 100).toFixed(2);
+  
+  const getSeverityStyles = (level) => {
+    switch(level) {
+      case "Emergency": return { bg: "linear-gradient(135deg, #ef4444, #b91c1c)", icon: "🚨", msg: "Immediate medical attention required!" };
+      case "Urgent": return { bg: "linear-gradient(135deg, #f59e0b, #d97706)", icon: "⚠️", msg: "You should see a doctor soon." };
+      default: return { bg: "linear-gradient(135deg, #10b981, #047857)", icon: "✅", msg: "No immediate risk, but monitor your condition." };
     }
   };
 
-  fetchData();
+  const severityData = getSeverityStyles(result.triage_level);
 
-}, []);
-if (!result) {
   return (
-   <p style={{ textAlign: "center", marginTop: "50px", fontSize: "18px" }}>
-  ⏳ Analyzing your symptoms...
-</p>
-  );
-}
-  return (
-  // <div className="container" style={{ display: "flex", justifyContent: "center" }}>
-  <div
-  className="container"
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    background: "#f4f6f8",   // ✅ light gray background
-    padding: "40px 0",       // ✅ spacing top/bottom
-    minHeight: "100vh"       // ✅ full screen height
-  }}
->
+    <div className="result-page">
+      <div className="result-card">
+        <header className="card-header">
+          <h2>Patient Triage Result</h2>
+          <p>AI-Powered Diagnostic Analysis</p>
+        </header>
 
-  <div style={{
-    width: "100%",
-    maxWidth: "600px",
-    background: "#ffffff",
-    padding: "25px",
-    borderRadius: "12px",
-    boxShadow: "0 6px 20px rgba(0,0,0,0.1)"
-  }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-  🏥 Patient Triage Result
-</h2>
-<hr style={{ marginBottom: "20px", opacity: "0.2" }} />
+        <div className="severity-banner" style={{ background: severityData.bg }}>
+          <div className="severity-icon">{severityData.icon}</div>
+          <h3>Triage Level: {result.triage_level}</h3>
+          <p>{severityData.msg}</p>
+        </div>
 
-     {result && (
-  <div style={{ marginTop: "25px" }}>
+        <div className="analysis-box">
+          <div className="detail-row">
+            <span className="label">🧬 Predicted Disease:</span>
+            <span className="value primary">{result.predicted_disease}</span>
+          </div>
+          
+          <div className="confidence-section">
+            <div className="confidence-header">
+              <span className="label">📊 AI Confidence:</span>
+              <span className="value">{confidenceValue}%</span>
+            </div>
+            <div className="progress-bar-bg">
+              <div className="progress-bar-fill" style={{ width: `${confidenceValue}%` }}></div>
+            </div>
+          </div>
+        </div>
 
-    {/* 🔥 Colored Box */}
-   <div
-  style={{
-    padding: "20px",
-    borderRadius: "10px",
-    color: "white",
-    textAlign: "center",
-    fontWeight: "600",
-    background:
-      result?.triage_level === "Emergency"
-        ? "linear-gradient(135deg, #e74c3c, #c0392b)"
-        : result?.triage_level === "Urgent"
-        ? "linear-gradient(135deg, #f39c12, #e67e22)"
-        : "linear-gradient(135deg, #2ecc71, #27ae60)",
-  }}
->
-      <div style={{ fontSize: "22px", marginBottom: "10px" }}>
-  {result.triage_level === "Emergency" && "🚨"}
-  {result.triage_level === "Urgent" && "⚠️"}
-  {result.triage_level === "Normal" && "✅"}
-</div>
+        {result.top3_predictions && result.top3_predictions.length > 1 && (
+          <div className="other-predictions">
+            <h4>🔍 Other Possible Conditions</h4>
+            <div className="prediction-list">
+              {result.top3_predictions.filter(item => item.disease !== result.predicted_disease).map((item, index) => (
+                <div key={index} className="prediction-item">
+                  <span className="disease-name">{item.disease}</span>
+                  <span className="disease-prob">{item.prob}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-<h3>Triage Level: {result.triage_level}</h3>
+        {!appointment ? (
+          <div className="appointment-alert error">
+            <span className="icon">❌</span> No appointment scheduled. Please try again later.
+          </div>
+        ) : (
+          <div className="appointment-box">
+            <div className="appointment-header">
+              <h3>📅 Appointment Details</h3>
+              <span className="badge-scheduled">✔ Scheduled</span>
+            </div>
+            <div className="appointment-details">
+              <div className="detail-item">
+                <span className="label">Appointment ID:</span>
+                <span className="value">#{appointment.appointment_id}</span>
+              </div>
+              <div className="detail-item">
+                <span className="label">Assigned Doctor:</span>
+                <span className="value">Dr. {appointment.doctor_name.split(' ').pop()}</span>
+              </div>
+              <div className="detail-item">
+                <span className="label">Scheduled Time:</span>
+                <span className="value highlight">{new Date(appointment.appointment_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-      <p>
-        {result.triage_level === "Emergency" &&
-          "Immediate medical attention required!"}
+        <div className="action-buttons">
+          <button className="btn-secondary" onClick={() => navigate("/predict")}>🔄 Check Again</button>
+          <button className="btn-primary" onClick={() => navigate("/")}>🏠 Back Home</button>
+        </div>
+      </div>
 
-        {result.triage_level === "Urgent" &&
-          "You should see a doctor soon."}
+      <style jsx>{`
+        .result-page { min-height: 100vh; background: #f8fafc; padding: 4rem 1rem; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: flex-start; }
+        .result-card { width: 100%; max-width: 650px; background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); animation: slideUp 0.5s ease-out; }
+        
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        {result.triage_level === "Normal" &&
-          "No immediate risk, but monitor your condition."}
-      </p>
+        .card-header { text-align: center; margin-bottom: 2rem; }
+        .card-header h2 { margin: 0; font-size: 2rem; color: #1e293b; font-weight: 800; }
+        .card-header p { margin: 0.5rem 0 0; color: #64748b; font-size: 1.1rem; }
+
+        .severity-banner { padding: 2rem; border-radius: 16px; color: white; text-align: center; margin-bottom: 2rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        .severity-icon { font-size: 3rem; margin-bottom: 0.5rem; line-height: 1; }
+        .severity-banner h3 { margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+        .severity-banner p { margin: 0; font-size: 1.05rem; opacity: 0.9; }
+
+        .analysis-box { background: #f1f5f9; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; }
+        .label { color: #64748b; font-weight: 600; font-size: 0.95rem; }
+        .value { color: #1e293b; font-weight: 700; font-size: 1.1rem; }
+        .value.primary { color: #3b82f6; font-size: 1.25rem; }
+        
+        .confidence-header { display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
+        .progress-bar-bg { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 10px; transition: width 1s ease-in-out; }
+
+        .other-predictions { margin-bottom: 2rem; }
+        .other-predictions h4 { margin: 0 0 1rem 0; color: #475569; font-size: 1rem; }
+        .prediction-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .prediction-item { display: flex; justify-content: space-between; padding: 1rem 1.25rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; transition: 0.2s; }
+        .prediction-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        .disease-name { font-weight: 500; color: #334155; }
+        .disease-prob { font-weight: 700; color: #64748b; }
+
+        .appointment-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; }
+        .appointment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .appointment-header h3 { margin: 0; color: #166534; font-size: 1.2rem; }
+        .badge-scheduled { background: #dcfce7; color: #15803d; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+        
+        .appointment-details { display: flex; flex-direction: column; gap: 0.75rem; }
+        .detail-item { display: flex; justify-content: space-between; }
+        .detail-item .value.highlight { color: #047857; }
+
+        .appointment-alert.error { background: #fef2f2; color: #b91c1c; padding: 1rem; border-radius: 12px; text-align: center; font-weight: 500; margin-bottom: 2rem; }
+
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .action-buttons button { padding: 1rem; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; border: none; }
+        .btn-primary { background: #10b981; color: white; }
+        .btn-primary:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .btn-secondary { background: #3b82f6; color: white; }
+        .btn-secondary:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+      `}</style>
     </div>
-
-    <br />
-
-<div style={{
-  marginTop: "25px",
-  padding: "15px",
-  borderRadius: "8px",
-  background: "#f9f9f9"
-}}>
-  <p><b>🧬 Disease:</b> {result.predicted_disease}</p>
-
-  <p>
-    <b>📊 Confidence:</b>{" "}
-    {(result.confidence > 1
-      ? result.confidence
-      : result.confidence * 100
-    ).toFixed(2)}%
-  </p>
-  <div style={{
-  height: "8px",
-  background: "#ddd",
-  borderRadius: "5px",
-  marginTop: "5px"
-}}>
-  <div style={{
-    width: `${(result.confidence > 1
-      ? result.confidence
-      : result.confidence * 100)}%`,
-    height: "100%",
-    background: "#3498db",
-    borderRadius: "5px"
-  }} />
-</div>
-</div>
-   {result.top3_predictions && (
-  <div style={{ marginTop: "25px" }}>
-    <h4 style={{ marginBottom: "10px" }}>
-      🔍 Other Possible Diseases
-    </h4>
-
-    {result.top3_predictions
-      .filter(item => item.disease !== result.predicted_disease)
-      .map((item, index) => (
-     <div
-  key={index}
-  style={{
-    padding: "10px",
-    marginBottom: "8px",
-    borderRadius: "6px",
-    background: "#f4f6f7",
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "14px"
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "scale(1.02)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "scale(1)";
-  }}
->
-  <span>{item.disease}</span>
-  <span style={{ fontWeight: "600" }}>
-    {item.prob}%
-  </span>
-</div>
-      ))}
-  </div>
-)}
-  </div>
-)}
-
-{!appointment && (
-  <p style={{ marginTop: "20px", color: "red" }}>
-    No appointment scheduled. Please try again later.
-  </p>
-)}
-
-{appointment && (
-<div style={{
-  marginTop: "25px",
-  padding: "20px",
-  borderRadius: "10px",
-  background: "#ecf5ff",
-  borderLeft: "5px solid #3498db"
-}}>
-  <h3 style={{ marginBottom: "10px" }}>
-    📅 Appointment Details
-  </h3>
-
-  <p><b>ID:</b> {appointment.appointment_id}</p>
-  <p><b>Doctor:</b> {appointment.doctor_name}</p>
-
-  <p>
-    <b>Time:</b>{" "}
-    {new Date(appointment.appointment_time).toLocaleString()}
-  </p>
-
-  <p style={{ color: "#2ecc71", fontWeight: "600" }}>
-    ✔ Scheduled
-  </p>
-</div>
-  
-)}
-<div style={{ marginTop: "30px", textAlign: "center" }}>
-
-  <button
-    onClick={() => navigate("/predict")}
-    style={{
-      padding: "10px 20px",
-      marginRight: "10px",
-      background: "#3498db",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontWeight: "600"
-    }}
-  >
-    🔄 Check Again
-  </button>
-
-  <button
-    onClick={() => navigate("/")}
-    style={{
-      padding: "10px 20px",
-      background: "#2ecc71",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontWeight: "600"
-    }}
-  >
-    🏠 Back Home
-  </button>
-
-</div>
-    </div>
-    </div>
-
   );
 }
 

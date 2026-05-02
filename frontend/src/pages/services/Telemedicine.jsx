@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import API from "../../api/api";
 
 function Telemedicine() {
   const [selectedService, setSelectedService] = useState("");
@@ -14,6 +15,28 @@ function Telemedicine() {
   });
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  const [activeSession, setActiveSession] = useState(null); // 'video' | 'chat' | null
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'system', text: 'Connected to secure chat server.' },
+    { sender: 'doctor', text: 'Hello! I am reviewing your case now. How can I help you today?' }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [availableDoctors, setAvailableDoctors] = useState([]);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const res = await API.get("/doctors", {
+          headers: { Authorization: localStorage.getItem("token") }
+        });
+        setAvailableDoctors(res.data);
+      } catch (error) {
+        console.error("Failed to fetch doctors:", error);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   const telemedicineServices = [
     {
@@ -66,13 +89,7 @@ function Telemedicine() {
     }
   ];
 
-  const availableDoctors = [
-    { id: 1, name: "Dr. Sarah Johnson", specialty: "General Practice", rating: 4.8, available: true },
-    { id: 2, name: "Dr. Michael Chen", specialty: "Internal Medicine", rating: 4.9, available: true },
-    { id: 3, name: "Dr. Emily Rodriguez", specialty: "Family Medicine", rating: 4.7, available: false },
-    { id: 4, name: "Dr. James Wilson", specialty: "Pediatrics", rating: 4.9, available: true },
-    { id: 5, name: "Dr. Lisa Anderson", specialty: "Women's Health", rating: 4.8, available: true }
-  ];
+  // Doctors are now fetched dynamically via useEffect
 
   const handleBooking = () => {
     if (!selectedService || !appointmentData.name || !appointmentData.email || !appointmentData.date || !appointmentData.time) {
@@ -86,7 +103,6 @@ function Telemedicine() {
       setBookingSuccess(true);
       setIsBooking(false);
       
-      // Store booking in localStorage
       const booking = {
         ...appointmentData,
         service: selectedService,
@@ -102,16 +118,11 @@ function Telemedicine() {
 
   const resetForm = () => {
     setAppointmentData({
-      name: "",
-      email: "",
-      phone: "",
-      date: "",
-      time: "",
-      reason: "",
-      consultationType: "video"
+      name: "", email: "", phone: "", date: "", time: "", reason: "", consultationType: "video"
     });
     setSelectedService("");
     setBookingSuccess(false);
+    setActiveSession(null);
   };
 
   const getMinDate = () => {
@@ -119,6 +130,113 @@ function Telemedicine() {
     date.setDate(date.getDate() + 1);
     return date.toISOString().split('T')[0];
   };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    
+    setChatMessages([...chatMessages, { sender: 'patient', text: chatInput }]);
+    setChatInput("");
+
+    // Simulate doctor reply
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, { sender: 'doctor', text: 'I see. Can you provide more details about when this started?' }]);
+    }, 1500);
+  };
+
+  // --- SUB-VIEWS ---
+
+  if (activeSession === 'video') {
+    return (
+      <div className="tele-session-container video-session">
+        <div className="video-main-feed">
+          <div className="doctor-feed-placeholder">
+            <i className="fas fa-user-md fa-5x text-white opacity-50 mb-3"></i>
+            <h3 className="text-white">{availableDoctors.length > 0 ? availableDoctors[0].name : "Assigned Doctor"}</h3>
+            <p className="text-white-50">{availableDoctors.length > 0 ? availableDoctors[0].specialty : "Medical Professional"}</p>
+            <div className="live-badge">LIVE</div>
+          </div>
+          <div className="patient-pip">
+            <i className="fas fa-user text-white"></i>
+          </div>
+        </div>
+        <div className="video-controls">
+          <button className="control-btn"><i className="fas fa-microphone"></i></button>
+          <button className="control-btn"><i className="fas fa-video"></i></button>
+          <button className="control-btn end-call" onClick={() => setActiveSession(null)}>
+            <i className="fas fa-phone-slash"></i> End Call
+          </button>
+          <button className="control-btn"><i className="fas fa-desktop"></i></button>
+          <button className="control-btn"><i className="fas fa-cog"></i></button>
+        </div>
+
+        <style jsx>{`
+          .tele-session-container { height: calc(100vh - 80px); background: #111827; display: flex; flex-direction: column; }
+          .video-main-feed { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1f2937 0%, #111827 100%); }
+          .doctor-feed-placeholder { text-align: center; }
+          .live-badge { position: absolute; top: 20px; left: 20px; background: #ef4444; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; animation: pulse 2s infinite; }
+          @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+          .patient-pip { position: absolute; bottom: 20px; right: 20px; width: 200px; height: 150px; background: #374151; border-radius: 12px; border: 2px solid #4b5563; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+          .video-controls { height: 90px; background: #1f2937; display: flex; justify-content: center; align-items: center; gap: 1.5rem; }
+          .control-btn { width: 50px; height: 50px; border-radius: 50%; border: none; background: #374151; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+          .control-btn:hover { background: #4b5563; }
+          .control-btn.end-call { background: #ef4444; width: auto; padding: 0 1.5rem; border-radius: 25px; font-weight: bold; gap: 0.5rem; }
+          .control-btn.end-call:hover { background: #dc2626; }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (activeSession === 'chat') {
+    return (
+      <div className="tele-session-container chat-session container py-4">
+        <div className="chat-card shadow">
+          <div className="chat-header">
+            <div className="d-flex align-items-center">
+              <div className="doctor-avatar"><i className="fas fa-user-md"></i></div>
+              <div className="ms-3">
+                <h5 className="mb-0">{availableDoctors.length > 0 ? availableDoctors[0].name : "Assigned Doctor"}</h5>
+                <small className="text-success"><i className="fas fa-circle me-1" style={{fontSize: '8px'}}></i>Online</small>
+              </div>
+            </div>
+            <button className="btn btn-outline-danger btn-sm" onClick={() => setActiveSession(null)}>End Chat</button>
+          </div>
+          <div className="chat-body">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`message-bubble ${msg.sender}`}>
+                {msg.text}
+              </div>
+            ))}
+          </div>
+          <form className="chat-footer" onSubmit={handleSendMessage}>
+            <input 
+              type="text" 
+              className="form-control" 
+              placeholder="Type your message..." 
+              value={chatInput} 
+              onChange={(e) => setChatInput(e.target.value)} 
+            />
+            <button type="submit" className="btn btn-primary"><i className="fas fa-paper-plane"></i></button>
+          </form>
+        </div>
+
+        <style jsx>{`
+          .chat-session { height: calc(100vh - 100px); display: flex; justify-content: center; }
+          .chat-card { width: 100%; max-width: 800px; background: white; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+          .chat-header { padding: 1.25rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+          .doctor-avatar { width: 45px; height: 45px; background: #e0e7ff; color: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+          .chat-body { flex: 1; padding: 1.5rem; overflow-y: auto; background: #f1f5f9; display: flex; flex-direction: column; gap: 1rem; }
+          .message-bubble { max-width: 75%; padding: 0.75rem 1.25rem; border-radius: 16px; font-size: 0.95rem; }
+          .message-bubble.system { align-self: center; background: #e2e8f0; color: #475569; font-size: 0.8rem; border-radius: 20px; }
+          .message-bubble.doctor { align-self: flex-start; background: white; color: #1e293b; border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+          .message-bubble.patient { align-self: flex-end; background: #3b82f6; color: white; border-bottom-right-radius: 4px; box-shadow: 0 2px 4px rgba(59,130,246,0.2); }
+          .chat-footer { padding: 1rem; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 0.5rem; }
+        `}</style>
+      </div>
+    );
+  }
+
+  // --- MAIN DASHBOARD VIEW ---
 
   return (
     <div className="container py-5">
@@ -291,30 +409,42 @@ function Telemedicine() {
             </div>
           )}
 
-          {/* Success Message */}
+          {/* Success Message & Launch Buttons */}
           {bookingSuccess && (
-            <div className="card shadow-sm">
-              <div className="card-body p-4 text-center">
-                <div className="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle p-4 mb-3">
-                  <i className="fas fa-check fa-3x text-success"></i>
+            <div className="card shadow-sm border-0 bg-light">
+              <div className="card-body p-5 text-center">
+                <div className="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle p-4 mb-4" style={{ width: '80px', height: '80px' }}>
+                  <i className="fas fa-check fa-2x"></i>
                 </div>
-                <h5 className="card-title mb-3">Appointment Booked Successfully!</h5>
-                <p className="text-muted mb-4">
-                  Your telemedicine appointment has been scheduled. You will receive a confirmation email shortly.
+                <h3 className="card-title fw-bold mb-3">Appointment Scheduled!</h3>
+                <p className="text-muted mb-4 fs-5">
+                  Your {appointmentData.consultationType} consultation is ready. You can join the virtual room now or wait until your scheduled time.
                 </p>
-                <div className="alert alert-info">
-                  <strong>Appointment Details:</strong><br />
-                  Service: {telemedicineServices.find(s => s.id === selectedService)?.name}<br />
-                  Date: {appointmentData.date}<br />
-                  Time: {appointmentData.time}<br />
-                  Type: {appointmentData.consultationType.charAt(0).toUpperCase() + appointmentData.consultationType.slice(1)} consultation
+                
+                <div className="d-flex justify-content-center gap-3 mb-4">
+                  {appointmentData.consultationType === 'video' && (
+                    <button className="btn btn-success btn-lg px-4" onClick={() => setActiveSession('video')}>
+                      <i className="fas fa-video me-2"></i> Join Video Room Now
+                    </button>
+                  )}
+                  {appointmentData.consultationType === 'chat' && (
+                    <button className="btn btn-success btn-lg px-4" onClick={() => setActiveSession('chat')}>
+                      <i className="fas fa-comments me-2"></i> Start Live Chat Now
+                    </button>
+                  )}
+                  {appointmentData.consultationType === 'phone' && (
+                    <div className="alert alert-success d-inline-block m-0">
+                      <i className="fas fa-phone-alt me-2"></i> The doctor will call you at {appointmentData.phone}
+                    </div>
+                  )}
                 </div>
-                <div className="d-grid gap-2 d-md-flex justify-content-md-center">
-                  <button className="btn btn-primary" onClick={resetForm}>
-                    <i className="fas fa-plus me-2"></i>Book Another Appointment
+
+                <div className="d-flex justify-content-center gap-2">
+                  <button className="btn btn-outline-secondary" onClick={resetForm}>
+                    Book Another Service
                   </button>
-                  <Link to="/contact" className="btn btn-outline-primary">
-                    <i className="fas fa-phone me-2"></i>Contact Support
+                  <Link to="/history" className="btn btn-outline-primary">
+                    View My History
                   </Link>
                 </div>
               </div>
@@ -322,7 +452,7 @@ function Telemedicine() {
           )}
 
           {/* Available Doctors */}
-          <div className="card shadow-sm mt-4">
+          <div className="card shadow-sm mt-5">
             <div className="card-body p-4">
               <h5 className="card-title mb-4">
                 <i className="fas fa-user-md me-2"></i>Available Healthcare Providers
@@ -330,7 +460,7 @@ function Telemedicine() {
               <div className="row">
                 {availableDoctors.map((doctor, index) => (
                   <div key={index} className="col-md-6 mb-3">
-                    <div className="d-flex align-items-center p-3 border rounded">
+                    <div className="d-flex align-items-center p-3 border rounded bg-white">
                       <div className="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center me-3" style={{width: "50px", height: "50px"}}>
                         <i className="fas fa-user-md"></i>
                       </div>
