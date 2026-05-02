@@ -99,103 +99,104 @@ setLoading(true);
     }
 
   } finally {
-    setLoading(false); // ✅ ALWAYS runs
+    setLoading(false); //  ALWAYS runs
   }
 };
 
-return (
-  <div
-  className="container"
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    background: "#f4f6f8",   // ✅ light gray background
-  }}
->
-  
-  <div style={{
-    width: "100%",
-    maxWidth: "500px",
-    background: "#ffffff",
-    padding: "25px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
-  }}>
+  return (
+    <div className="animate-fade-in">
+      <div className="container">
+        <div className="text-center mb-4">
+          <h1>Patient Symptom Form</h1>
+          <p className="text-muted">Describe your symptoms for AI-powered triage analysis</p>
+        </div>
 
-    <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-      Patient Symptom Form
-    </h2>
+        <div className="card">
+          <div className="card-body">
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="symptoms" className="form-label">
+                  Describe Your Symptoms
+                </label>
+                <textarea
+                  id="symptoms"
+                  disabled={loading}
+                  placeholder="Please describe your symptoms in detail. Include when they started, severity, and any other relevant information..."
+                  value={symptoms}
+                  onChange={(e) => setSymptoms(e.target.value)}
+                  className={loading ? 'loading' : ''}
+                />
+                <div className="form-help">
+                  Be as specific as possible to get the most accurate triage assessment.
+                </div>
+              </div>
 
-    <form onSubmit={handleSubmit}>
-       {loading && (
-    <p style={{ color: "#3498db", marginBottom: "10px" }}>
-      Processing your symptoms... please wait
-    </p>
-  )}
+              {loading && (
+                <div className="text-center py-3">
+                  <div className="loading-spinner me-2"></div>
+                  <span className="text-muted">Processing your symptoms... please wait</span>
+                </div>
+              )}
 
-     <textarea
-  disabled={loading}
-  placeholder="Describe your symptoms..."
-  value={symptoms}
-  onChange={(e) => setSymptoms(e.target.value)}
-  style={{
-    width: "100%",
-    height: "120px",
-    padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    resize: "none",
-    outline: "none",
-    transition: "all 0.2s ease"
-  }}
-  onFocus={(e) => {
-    e.target.style.border = "1px solid #3498db";
-    e.target.style.boxShadow = "0 0 5px rgba(52,152,219,0.3)";
-  }}
-  onBlur={(e) => {
-    e.target.style.border = "1px solid #ccc";
-    e.target.style.boxShadow = "none";
-  }}
-/>
+              <button
+                type="submit"
+                disabled={loading || !symptoms.trim()}
+                className="btn btn-primary btn-lg btn-block hover-lift"
+              >
+                {loading ? (
+                  <>
+                    <div className="loading-spinner me-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Submit Symptoms
+                    <span className="ms-2">{'>'}</span>
+                  </>
+                )}
+              </button>
+            </form>
 
-<button
-  type="submit"
-  disabled={loading}
-  style={{
-    width: "100%",
-    marginTop: "15px",
-    padding: "10px",
-    background: loading ? "#95a5a6" : "#3498db",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: loading ? "not-allowed" : "pointer",
-    fontWeight: "600",
-    transition: "all 0.2s ease"
-  }}
+            <div className="mt-4">
+              <div className="alert alert-info">
+                <strong>Important:</strong> This is an AI-powered triage system. 
+                For medical emergencies, please call emergency services immediately.
+              </div>
+            </div>
+          </div>
+        </div>
 
-  onMouseEnter={(e) => {
-    if (loading) return; // ✅ prevent hover when loading
-    e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
-    e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.25)";
-    e.currentTarget.style.background = "#2980b9";
-  }}
-
-  onMouseLeave={(e) => {
-    if (loading) return; // ✅ prevent hover when loading
-    e.currentTarget.style.transform = "translateY(0)";
-    e.currentTarget.style.boxShadow = "none";
-    e.currentTarget.style.background = "#3498db";
-  }}
->
-  {loading ? "⏳ Processing..." : "Submit Symptoms"}
-</button>
-
-    </form>
-  </div>
-
-</div>
-);
+        <div className="card mt-4">
+          <div className="card-header">
+            <h3>Recent History</h3>
+          </div>
+          <div className="card-body">
+            {history.length === 0 ? (
+              <p className="text-muted text-center">No previous symptom submissions</p>
+            ) : (
+              <div className="history-list">
+                {history.slice(0, 3).map((item, index) => (
+                  <div key={index} className="history-item">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="symptom-text">{item.symptoms}</div>
+                        <small className="text-muted">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </small>
+                      </div>
+                      <span className={`badge badge-${item.severity}`}>
+                        {item.severity}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default PatientForm;

@@ -35,9 +35,11 @@ router.get("/doctor/me", authenticateToken, async (req, res) => {
     const [rows] = await db.promise().query(
       `SELECT 
         d.id,
+        u.name,
         d.available_from,
         d.available_to
       FROM doctors d
+      JOIN users u ON d.user_id = u.id
       WHERE d.user_id = ?`,
       [userId]
     );
@@ -83,7 +85,7 @@ router.put("/triage/:id/complete", authenticateToken, async (req, res) => {
     const triageId = req.params.id;
     const userId = req.user.id;
 
-    // 1️⃣ Get doctor_id from logged-in user
+    // 1️ Get doctor_id from logged-in user
     const [doctorRows] = await db.promise().query(
       "SELECT id FROM doctors WHERE user_id = ?",
       [userId]
@@ -95,7 +97,7 @@ router.put("/triage/:id/complete", authenticateToken, async (req, res) => {
 
     const doctorId = doctorRows[0].id;
 
-    // 2️⃣ Check if this triage belongs to this doctor via appointments
+    // 2️Check if this triage belongs to this doctor via appointments
     const [check] = await db.promise().query(
       `SELECT * FROM appointments 
        WHERE triage_id = ? AND doctor_id = ?`,
@@ -106,7 +108,7 @@ router.put("/triage/:id/complete", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Not your patient" });
     }
 
-    // 3️⃣ Safe to update
+    // 3️Safe to update
     await db.promise().query(
       `UPDATE triage_results SET status = 'completed' WHERE id = ?`,
       [triageId]
@@ -122,6 +124,38 @@ router.put("/triage/:id/complete", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error updating case" });
+  }
+});
+
+router.get("/doctor/patient-records", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [doctor] = await db.promise().query("SELECT id FROM doctors WHERE user_id = ?", [userId]);
+    if (doctor.length === 0) return res.status(404).json({ message: "Doctor not found" });
+
+    const sql = `
+      SELECT 
+        p.id AS patient_id,
+        u.name AS patient_name,
+        t.predicted_disease,
+        t.severity,
+        t.status AS triage_status,
+        t.created_at AS visit_date,
+        a.appointment_date,
+        a.status AS appointment_status
+      FROM triage_results t
+      JOIN patients p ON t.patient_id = p.id
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN appointments a ON t.id = a.triage_id
+      WHERE (a.doctor_id = ? OR a.doctor_id IS NULL)
+      ORDER BY t.created_at DESC
+    `;
+
+    const [records] = await db.promise().query(sql, [doctor[0].id]);
+    res.json(records);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching records" });
   }
 });
 module.exports = router;

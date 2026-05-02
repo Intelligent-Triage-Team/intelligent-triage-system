@@ -45,7 +45,6 @@ router.get("/triage-queue", authenticateToken, async (req, res) => {
         t.id AS triage_id,
         u.name AS patient_name,
         t.predicted_disease,
-        t.status,
         t.severity,
         t.prediction_confidence,
         t.created_at,
@@ -55,10 +54,10 @@ router.get("/triage-queue", authenticateToken, async (req, res) => {
       FROM triage_results t
       JOIN patients p ON t.patient_id = p.id
       JOIN users u ON p.user_id = u.id
-  LEFT JOIN appointments a ON t.id = a.triage_id
-      WHERE t.status != 'completed'
-AND (a.doctor_id = ? OR a.doctor_id IS NULL)
-AND (a.status = 'scheduled' OR a.status IS NULL)
+      LEFT JOIN appointments a ON t.id = a.triage_id
+      WHERE (a.doctor_id = ? OR a.doctor_id IS NULL)
+      AND (a.status = 'scheduled' OR a.status IS NULL)
+      AND (t.status = 'pending' OR t.status IS NULL)
       ORDER BY
         FIELD(t.severity,'emergency','urgent','normal'),
         t.created_at DESC
@@ -116,7 +115,7 @@ router.post("/predict", authenticateToken, async (req, res) => {
       });
     }
 
-    // ✅ Call ML API
+    // Call ML API
     const mlResponse = await axios.post(
       "http://127.0.0.1:5000/predict",
       { text: symptoms }
@@ -124,16 +123,23 @@ router.post("/predict", authenticateToken, async (req, res) => {
 
     const result = mlResponse.data;
 
+    // Check if ML service returned an error
+    if (result.error) {
+      return res.status(400).json({
+        message: result.error
+      });
+    }
+
     const predictedDisease = result.predicted_disease;
     const confidence = result.confidence;
-    const severity = result.triage_level.toLowerCase();
+    const severity = result.triage_level ? result.triage_level.toLowerCase() : 'normal';
 
-    // ✅ Insert triage
+    // Insert triage
     const [dbResult] = await db.promise().query(
       `INSERT INTO triage_results 
-      (patient_id, predicted_disease, severity, prediction_confidence, status)
-      VALUES (?, ?, ?, ?, ?)`,
-      [patientId, predictedDisease, severity, confidence, "pending"]
+      (patient_id, predicted_disease, severity, prediction_confidence)
+      VALUES (?, ?, ?, ?)`,
+      [patientId, predictedDisease, severity, confidence]
     );
 
     const triageId = dbResult.insertId;
@@ -270,64 +276,125 @@ await db.promise().query(
   }
 });
 router.post("/auto-schedule", authenticateToken, async (req, res) => {
-
-  // const { triage_id, patient_id } = req.body;
   const { triage_id } = req.body;
 
-const userId = req.user.id;
-
-const [patient] = await db.promise().query(
-  "SELECT id FROM patients WHERE user_id = ?",
-  [userId]
-);
-
-if (patient.length === 0) {
-  return res.status(404).json({ message: "Patient not found" });
-}
-
-const patient_id = patient[0].id;
-
   try {
-// Check if already scheduled
-const [existingAppointment] = await db.promise().query(
-  "SELECT * FROM appointments WHERE patient_id = ? AND triage_id = ?",
-  [patient_id, triage_id]
-);
-
-if (existingAppointment.length > 0) {
-  return res.status(400).json({
-    message: "Appointment already exists for this patient and triage"
-  });
-}
-    // 1. Get severity
-    const [triageResult] = await db.promise().query(
-      "SELECT severity FROM triage_results WHERE id = ?",
+    // 1. Get triage result and patient info
+    const [triageResults] = await db.promise().query(
+      "SELECT patient_id, severity FROM triage_results WHERE id = ?",
       [triage_id]
     );
 
-    if (triageResult.length === 0) {
-      return res.status(404).json({ message: "Triage not found" });
+    if (triageResults.length === 0) {
+      return res.status(404).json({ message: "Triage results not found" });
     }
 
-    const severity = triageResult[0].severity;
+    const { patient_id, severity } = triageResults[0];
 
-    // 2. Get doctors
-  const [doctors] = await db.promise().query(
-  "SELECT id, available_from, available_to FROM doctors ORDER BY available_from ASC"
-);
+    // 2. Check if already scheduled
+    const [existingAppointment] = await db.promise().query(
+      "SELECT * FROM appointments WHERE triage_id = ? AND status = 'scheduled'",
+      [triage_id]
+    );
+
+    if (existingAppointment.length > 0) {
+      return res.status(400).json({
+        message: "Appointment already exists for this triage"
+      });
+    }
+
+    // 3. Get all doctors and their availability
+    const [doctors] = await db.promise().query(`
+      SELECT 
+        d.id,
+        u.name AS doctor_name,
+        d.available_from,
+        d.available_to,
+        COUNT(a.id) AS total_cases
+      FROM doctors d
+      JOIN users u ON d.user_id = u.id
+      LEFT JOIN appointments a ON d.id = a.doctor_id AND a.status = 'scheduled'
+      GROUP BY d.id, u.name, d.available_from, d.available_to
+      ORDER BY total_cases ASC
+    `);
 
     if (doctors.length === 0) {
       return res.status(404).json({ message: "No doctors available" });
     }
-    // 6. If no doctor available
-    res.status(404).json({
-      message: "No available time slots for any doctor"
+
+    let scheduledAppointment = null;
+    const today = new Date().toISOString().split("T")[0];
+
+    // 4. Try to find a slot for each doctor (starting with the least busy)
+    for (const doctor of doctors) {
+      let startTime = new Date(`${today}T${doctor.available_from}`);
+      let endTime = new Date(`${today}T${doctor.available_to}`);
+      
+      // Slot finding logic
+      while (startTime < endTime) {
+        let appointmentDate = new Date(startTime);
+
+        // Adjust based on severity (mimicking predict route logic)
+        if (severity === "urgent") {
+          appointmentDate.setMinutes(appointmentDate.getMinutes() + 30);
+        } else if (severity === "normal") {
+          appointmentDate.setHours(appointmentDate.getHours() + 2);
+        }
+
+        const [existing] = await db.promise().query(
+          "SELECT * FROM appointments WHERE doctor_id = ? AND appointment_date = ?",
+          [doctor.id, appointmentDate]
+        );
+
+        if (existing.length === 0) {
+          const [resultApp] = await db.promise().query(
+            `INSERT INTO appointments 
+             (patient_id, doctor_id, triage_id, appointment_date, status)
+             VALUES (?, ?, ?, ?, 'scheduled')`,
+            [patient_id, doctor.id, triage_id, appointmentDate, 'scheduled']
+          );
+
+          scheduledAppointment = {
+            appointment_id: resultApp.insertId,
+            doctor_id: doctor.id,
+            doctor_name: doctor.doctor_name,
+            appointment_time: appointmentDate
+          };
+
+          // Send confirmation email to patient
+          const [patientUser] = await db.promise().query(
+            "SELECT u.email FROM users u JOIN patients p ON u.id = p.user_id WHERE p.id = ?",
+            [patient_id]
+          );
+
+          if (patientUser.length > 0) {
+            await transporter.sendMail({
+              from: '"Patient Triage System" <abebenega23@gmail.com>',
+              to: patientUser[0].email,
+              subject: "Appointment Scheduled by Doctor",
+              html: `<p>An appointment has been scheduled for you with <b>Dr. ${doctor.doctor_name}</b> at ${appointmentDate}.</p>`
+            }).catch(e => console.error("Email error:", e));
+          }
+
+          break;
+        }
+        startTime.setMinutes(startTime.getMinutes() + 30);
+      }
+      if (scheduledAppointment) break;
+    }
+
+    if (!scheduledAppointment) {
+      return res.status(404).json({ message: "No available time slots found for any doctor" });
+    }
+
+    res.json({
+      message: "Appointment auto-scheduled successfully",
+      appointment: scheduledAppointment
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Auto-schedule error:", error);
+    res.status(500).json({ error: "Server error during scheduling" });
   }
-
 });
 module.exports = router;

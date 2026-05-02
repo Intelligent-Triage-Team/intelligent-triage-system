@@ -34,6 +34,10 @@ const patientRoutes = require("./routes/patient");
 app.use("/", patientRoutes);
 const adminRoutes = require("./routes/admin");
 app.use("/", adminRoutes);
+const imageAnalysisRoutes = require("./routes/imageAnalysis");
+app.use("/image-analysis", imageAnalysisRoutes);
+const chatbotRoutes = require("./routes/chatbot");
+app.use("/chatbot", chatbotRoutes);
 
 
 app.get("/", (req, res) => {
@@ -283,7 +287,7 @@ app.get("/", (req, res) => {
 
 //       let startTime = new Date(`${today}T${doctor.available_from}`);
 // let endTime = new Date(`${today}T${doctor.available_to}`);
-      
+
 
 //       while (startTime < endTime) {
 
@@ -335,26 +339,26 @@ app.get("/", (req, res) => {
 //   subject: "Appointment Confirmation - Patient Triage System",
 //   html: `
 //     <div style="font-family: Arial; padding: 20px; background-color: #f4f4f4;">
-      
+
 //       <div style="max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px;">
-        
+
 //         <h2 style="color: #2e7d32;">Appointment Confirmed ✅</h2>
-        
+
 //         <p>Hello,</p>
-        
+
 //         <p>Your appointment has been successfully scheduled.</p>
-        
+
 //         <div style="background: #f1f8e9; padding: 10px; border-radius: 5px; margin: 15px 0;">
 //           <p><strong>Doctor:</strong> ${doctor.doctor_name}</p>
 //           <p><strong>Date & Time:</strong> ${appointmentDate}</p>
 //         </div>
-        
+
 //         <p>Please arrive on time.</p>
-        
+
 //         <p style="margin-top: 20px;">Thank you,<br/>Patient Triage System</p>
-      
+
 //       </div>
-    
+
 //     </div>
 //   `
 // });
@@ -735,7 +739,7 @@ app.get("/", (req, res) => {
 //   }
 // });
 // app.post("/reset-password/:token", async (req, res) => {
-  
+
 //   const { token } = req.params;
 
 //   const { password } = req.body;

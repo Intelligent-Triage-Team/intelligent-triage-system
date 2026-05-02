@@ -32,6 +32,7 @@ critical_symptoms = [
     "difficulty_breathing",
     "unconsciousness",
     "severe_bleeding"
+     
 ]
 app = Flask(__name__)
 

@@ -99,7 +99,7 @@ const [showPassword, setShowPassword] = useState(false);
 
       </form>
       <p>
-  Forgot Password? <a href="/forgot">Click here</a>
+  Forgot Password? <a href="/forgot-password">Click here</a>
 </p>
 <p style={{ marginTop: "10px" }}>
   Don't have an account?{" "}

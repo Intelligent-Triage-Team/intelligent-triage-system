@@ -18,30 +18,33 @@ router.put("/admin/user/:id/role", authenticateToken, authorizeRole("admin"), (r
     res.json({ message: "Role updated successfully" });
   });
 });
-router.post("/admin/create-doctor", authenticateToken, authorizeRole("admin"), async (req, res) => {
-  const { name, email, password, specialization, available_from, available_to } = req.body;
+router.post("/admin/create-staff", authenticateToken, authorizeRole("admin"), async (req, res) => {
+  const { name, email, password, role, specialization, available_from, available_to } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    const targetRole = role || 'doctor';
 
     const [userResult] = await db.promise().query(
-      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'doctor')",
-      [name, email, hashedPassword]
+      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+      [name, email, hashedPassword, targetRole]
     );
 
     const userId = userResult.insertId;
 
-    await db.promise().query(
-      `INSERT INTO doctors (user_id, specialization, available_from, available_to)
-       VALUES (?, ?, ?, ?)`,
-      [userId, specialization, available_from, available_to]
-    );
+    if (targetRole === 'doctor') {
+      await db.promise().query(
+        `INSERT INTO doctors (user_id, specialization, available_from, available_to)
+         VALUES (?, ?, ?, ?)`,
+        [userId, specialization || 'General', available_from || '08:00:00', available_to || '17:00:00']
+      );
+    }
 
-    res.json({ message: "Doctor created successfully" });
+    res.json({ message: `${targetRole.charAt(0).toUpperCase() + targetRole.slice(1)} created successfully` });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating doctor" });
+    console.error("Staff creation error:", error);
+    res.status(500).json({ message: "Error creating staff member", error: error.message });
   }
 });
 router.put("/admin/doctor/:id", authenticateToken, authorizeRole("admin"), async (req, res) => {
@@ -76,15 +79,23 @@ router.put("/admin/doctor/:id", authenticateToken, authorizeRole("admin"), async
 router.get("/admin/users", authenticateToken, authorizeRole("admin"), async (req, res) => {
   try {
     const [rows] = await db.promise().query(`
-  SELECT 
-    u.id,
-    u.name,
-    u.email,
-    u.role,
-    d.id AS doctor_id
-  FROM users u
-  LEFT JOIN doctors d ON u.id = d.user_id
-`);
+      SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.role,
+        d.id AS doctor_id,
+        d.available_from,
+        d.available_to,
+        (SELECT COUNT(*) FROM appointments a 
+         WHERE a.doctor_id = d.id 
+         AND a.status IN ('scheduled', 'pending') 
+         AND DATE(a.appointment_date) = CURDATE()
+        ) AS active_cases
+      FROM users u
+      LEFT JOIN doctors d ON u.id = d.user_id
+      ORDER BY u.role, u.name
+    `);
     res.json(rows);
   } catch (error) {
     console.error(error);

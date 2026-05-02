@@ -8,7 +8,7 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ message: "Access denied. No token provided." });
   }
 
-  // ✅ FIX HERE
+  // 
   let token;
 
   if (authHeader.startsWith("Bearer ")) {

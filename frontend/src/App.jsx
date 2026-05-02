@@ -1,5 +1,5 @@
-import { Routes, Route, Link } from "react-router-dom";
-import { useState, useEffect } from "react";   // ADD THIS
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "./App.css";
 import API from "./api/api";
 
@@ -9,6 +9,8 @@ import PatientForm from "./pages/PatientForm";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Home from "./pages/Home";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -18,292 +20,176 @@ import AddDoctor from "./pages/doctor/AddDoctor";
 import EditDoctor from "./pages/doctor/EditDoctor";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Chatbot from "./components/Chatbot";
+import ImageAnalysis from "./components/ImageAnalysis";
+import Footer from "./components/Footer";
+import AIDiagnosis from "./pages/services/AIDiagnosis";
+import EmergencyTriage from "./pages/services/EmergencyTriage";
+import Telemedicine from "./pages/services/Telemedicine";
+import PatientMonitoring from "./pages/services/PatientMonitoring";
+import HealthAnalytics from "./pages/services/HealthAnalytics";
+import MedicalResearch from "./pages/services/MedicalResearch";
+import ServicesPortal from "./pages/ServicesPortal";
 
 function App() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser || storedUser === "undefined") return null;
+      return JSON.parse(storedUser);
+    } catch (error) {
+      return null;
+    }
+  });
+  const [notifications, setNotifications] = useState([]);
+  const [showNotif, setShowNotif] = useState(false);
 
-  // ADD HERE
-  const [scrolled, setScrolled] = useState(false);
-const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    setNotifications([]);
+    setShowNotif(false);
+    navigate("/login");
+  };
 
-  setUser(null);
-  setNotifications([]);   // ✅ clear notifications
-  setShowNotif(false);    // ✅ close dropdown
-};
-const fetchNotifications = async () => {
-  try {
-    const res = await API.get("/notifications", {
-      headers: {
-        Authorization: localStorage.getItem("token")
-      }
-    });
-
-    setNotifications(res.data);
-
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-  }
-};
-  // ADD HERE
-  useEffect(() => {
-
-  const handleScroll = () => {
-    if (window.scrollY > 50) {
-      setScrolled(true);
-    } else {
-      setScrolled(false);
+  const fetchNotifications = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await API.get("/notifications", {
+        headers: { Authorization: token }
+      });
+      setNotifications(res.data);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
     }
   };
 
-  window.addEventListener("scroll", handleScroll);
+  useEffect(() => {
+    if (user) fetchNotifications();
+  }, [user]);
 
+  const markAsRead = async (id) => {
+    try {
+      await API.put(`/notifications/read/${id}`, {}, {
+        headers: { Authorization: localStorage.getItem("token") }
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (error) {
+      console.error("Mark read error:", error);
+    }
+  };
 
-  fetchNotifications(); // ✅ CALL HERE
-
-  return () => window.removeEventListener("scroll", handleScroll);
-
-}, []);
-const token = localStorage.getItem("token");
-const [user, setUser] = useState(() => {
-  try {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser || storedUser === "undefined") return null;
-    return JSON.parse(storedUser);
-  } catch (error) {
-    console.error("Invalid user in localStorage:", error);
-    return null;
-  }
-});
-const [notifications, setNotifications] = useState([]);
-const [showNotif, setShowNotif] = useState(false);
-  // RETURN STARTS HERE
   return (
-    <div>
-      <ToastContainer />
-   <nav 
-  className={`navbar ${scrolled ? "navbar-scroll" : ""}`} 
-//   style={{
-//     display: "flex",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     padding: "15px 30px",
-// minHeight: "60px"
-  // }}
->
-{/* LEFT SIDE */}
-<div style={{ display: "flex", gap: "15px" }}>
-  <Link to="/">Home</Link>
+    <div className="app-main" >
+      <ToastContainer position="top-right" autoClose={3000}  />
+      
+      <nav className="navbar">
+        <div className="nav-links">
+          <Link to="/" className="nav-brand">
+            <span className="nav-logo-icon">🏥</span>
+          ግዕዝ Intelligent Healthcare Triage System
+          </Link>
+          <Link to="/">Home</Link>
+          <Link to="/about">About</Link>
+          <Link to="/services">Services</Link>
+          <Link to="/contact">Contact Us</Link>
 
+          {user?.role === "patient" && (
+            <>
+              <Link to="/predict">New Check</Link>
+              <Link to="/image-analysis">AI Injury Detection</Link>
+              <Link to="/result">Result</Link>
+              <Link to="/history">History</Link>
+            </>
+          )}
 
+          {user?.role === "doctor" && <Link to="/doctor">Doctor Dashboard</Link>}
+          {user?.role === "admin" && <Link to="/admin">Admin Dashboard</Link>}
+        </div>
 
-  {user?.role === "patient" && (
-    <>
-      <Link to="/predict">New Check</Link>
-      <Link to="/result">Result</Link>
-      <Link to="/history">History</Link>
-    </>
-  )}
+        <div className="nav-actions">
+          {user && (
+            <div className="notification-wrapper" style={{ position: 'relative', marginRight: '15px' }}>
+              <button 
+                onClick={() => setShowNotif(!showNotif)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', position: 'relative' }}
+              >
+                🔔
+                {notifications.filter(n => !n.is_read).length > 0 && (
+                  <span className="notif-badge">{notifications.filter(n => !n.is_read).length}</span>
+                )}
+              </button>
+              
+              {showNotif && (
+                <div className="notif-dropdown">
+                  {notifications.length === 0 ? (
+                    <p style={{ padding: '10px', color: '#666' }}>No notifications</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div 
+                        key={n.id} 
+                        className={`notif-item ${n.is_read ? 'read' : 'unread'}`}
+                        onClick={() => markAsRead(n.id)}
+                      >
+                        {n.message}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-  {user?.role === "doctor" && (
-    <Link to="/doctor">Doctor Dashboard</Link>
-  )}
+          {!user ? (
+            <>
+              <Link to="/login" className="btn-login-outline">Login</Link>
+              <Link to="/signup" className="btn-signup-fill">Signup</Link>
+            </>
+          ) : (
+            <div className="user-profile">
+              <span style={{ marginRight: '15px', color: 'var(--gray-300)' }}>{user.name}</span>
+              <button onClick={logout} className="btn-logout">Logout</button>
+            </div>
+          )}
+        </div>
+      </nav>
 
-  {user?.role === "admin" && (
-    <Link to="/admin">Admin Dashboard</Link>
-  )}
-</div>
+      <main className="content-area">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/services" element={<ProtectedRoute><ServicesPortal /></ProtectedRoute>} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/login" element={<Login setUser={setUser} />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          
+          <Route path="/predict" element={<ProtectedRoute role="patient"><PatientForm /></ProtectedRoute>} />
+          <Route path="/image-analysis" element={<ProtectedRoute role="patient"><ImageAnalysis /></ProtectedRoute>} />
+          <Route path="/result" element={<ProtectedRoute role="patient"><ResultPage /></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute role="patient"><HistoryPage /></ProtectedRoute>} />
+          
+          <Route path="/doctor" element={<ProtectedRoute role="doctor"><DoctorDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/add-doctor" element={<ProtectedRoute role="admin"><AddDoctor /></ProtectedRoute>} />
+          <Route path="/edit-doctor/:id" element={<ProtectedRoute role="admin"><EditDoctor /></ProtectedRoute>} />
+          
+          {/* Individual Service Routes - Still accessible for direct links */}
+          <Route path="/services/ai-diagnosis" element={<ProtectedRoute><AIDiagnosis /></ProtectedRoute>} />
+          <Route path="/services/emergency-triage" element={<ProtectedRoute><EmergencyTriage /></ProtectedRoute>} />
+          <Route path="/services/telemedicine" element={<ProtectedRoute><Telemedicine /></ProtectedRoute>} />
+          <Route path="/services/patient-monitoring" element={<ProtectedRoute><PatientMonitoring /></ProtectedRoute>} />
+          <Route path="/services/health-analytics" element={<ProtectedRoute><HealthAnalytics /></ProtectedRoute>} />
+          <Route path="/services/medical-research" element={<ProtectedRoute><MedicalResearch /></ProtectedRoute>} />
+        </Routes>
+      </main>
 
-{/* RIGHT SIDE */}
-<div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-  {!user && (
-    <>
-      <Link to="/login">Login</Link>
-      <Link to="/signup">Signup</Link>
-    </>
-  )}
-  {/* 🔔 NOTIFICATION */}
-  {user && (
-  <div style={{ position: "relative" }}>
-    <span 
-      style={{ cursor: "pointer" }} 
-      onClick={async () => {
-        try {
-          // await API.put("/notifications/read", {}, {
-          //   headers: {
-          //     Authorization: localStorage.getItem("token")
-          //   }
-          // });
-        } catch (error) {
-          console.error("Mark read error:", error);
-        }
-
-        fetchNotifications();
-        setShowNotif(!showNotif);
-      }}
-    >
-     <div style={{ position: "relative", display: "inline-block" }}>
-  
-  <span>🔔</span>
-
-  {notifications.length > 0 && (
-    <span style={{
-      position: "absolute",
-      top: "-5px",
-      right: "-10px",
-      background: "red",
-      color: "white",
-      borderRadius: "50%",
-      padding: "2px 6px",
-      fontSize: "12px"
-    }}>
-      {notifications.length}
-    </span>
-  )}
-
-</div>
-    </span>
-
-    {showNotif && (
-    <div style={{
-  position: "absolute",
-  top: "40px",
-  right: "0",
-  background: "#ffffff",
-  borderRadius: "10px",
-  padding: "10px 0",
-  width: "280px",
-  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-  zIndex: 1000,
-  overflow: "hidden"
-}}>
-        {notifications.length === 0 ? (
-          <p style={{ padding: "15px", textAlign: "center", color: "#888" }}>
-  No notifications
-</p>
-        ) : (
-         notifications.map((n) => (
-  <div 
-    key={n.id} 
-    style={{ 
-      padding: "10px 15px",
-      borderBottom: "1px solid #f1f1f1",
-      fontSize: "14px",
-      cursor: "pointer",
-      transition: "background 0.2s",
-      background: n.is_read ? "transparent" : "#d6ecff",
-      borderLeft: n.is_read ? "none" : "4px solid #3498db",
-      fontWeight: n.is_read ? "normal" : "600"
-    }}
-
-   onClick={async () => {
-  try {
-    await API.put(`/notifications/read/${n.id}`, {}, {
-      headers: {
-        Authorization: localStorage.getItem("token")
-      }
-    });
-
-    // ✅ update UI instantly
-    setNotifications((prev) =>
-      prev.map((item) =>
-        item.id === n.id ? { ...item, is_read: true } : item
-      )
-    );
-
-  } catch (error) {
-    console.error("Error marking one notification:", error);
-  }
-}}
-
-    onMouseEnter={(e) => e.currentTarget.style.background = "#f5f7fa"}
-    onMouseLeave={(e) => e.currentTarget.style.background = n.is_read ? "transparent" : "#d6ecff"}
-  >
-    🔔 {n.message}
-  </div>
-))
-        )}
-      </div>
-    )}
-  </div>
-  )}
-  {/* LOGOUT */}
-  {user && (
-    <button onClick={logout}>Logout</button>
-  )}
-
-</div>
-</nav>
-
-      <h1>Patient Triage System</h1>
-
-      <Routes>
-    
-        <Route path="/forgot" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-
-        <Route
-  path="/predict"
-  element={
-    <ProtectedRoute role="patient">
-      <PatientForm />
-    </ProtectedRoute>
-  }
-/>
-       <Route
-  path="/doctor"
-  element={
-    <ProtectedRoute role="doctor">
-      <DoctorDashboard />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/add-doctor"
-  element={
-    <ProtectedRoute role="admin">
-      <AddDoctor />
-    </ProtectedRoute>
-  }
-/>
-        <Route
-  path="/admin"
-  element={
-    <ProtectedRoute role="admin">
-      <AdminDashboard />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/result"
-  element={
-    <ProtectedRoute role="patient">
-      <ResultPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/history"
-  element={
-    <ProtectedRoute role="patient">
-      <HistoryPage />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/edit-doctor/:id"
-  element={
-    <ProtectedRoute role="admin">
-      <EditDoctor />
-    </ProtectedRoute>
-  }
-/>
-      </Routes>
-
+      <Footer />
+      <Chatbot />
     </div>
   );
 }

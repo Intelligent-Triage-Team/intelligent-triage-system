@@ -10,6 +10,7 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
+    reset_token VARCHAR(255) DEFAULT NULL,
     role ENUM('admin','doctor','patient') NOT NULL DEFAULT 'patient',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -83,4 +84,15 @@ CREATE TABLE patient_symptoms (
     symptom_id INT NOT NULL,
     FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
     FOREIGN KEY (symptom_id) REFERENCES symptoms(id) ON DELETE CASCADE
+);
+
+-- =========================
+-- 8️⃣ NOTIFICATIONS TABLE
+-- =========================
+CREATE TABLE notifications (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

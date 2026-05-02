@@ -6,7 +6,7 @@ router.post("/appointments", async (req, res) => {
   const { patient_id, doctor_id, triage_id, appointment_date } = req.body;
 
   try {
-    // ✅ CHECK if already scheduled
+  
     const [existing] = await db.promise().query(
       "SELECT * FROM appointments WHERE triage_id = ?",
       [triage_id]
@@ -37,5 +37,21 @@ res.json({
     res.status(500).json({ error: "Appointment creation failed" });
   }
 
+});
+
+router.put("/appointments/:id", async (req, res) => {
+  const { id } = req.params;
+  const { appointment_date } = req.body;
+
+  try {
+    await db.promise().query(
+      "UPDATE appointments SET appointment_date = ? WHERE id = ?",
+      [appointment_date, id]
+    );
+    res.json({ message: "Appointment updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update appointment" });
+  }
 });
 module.exports = router;

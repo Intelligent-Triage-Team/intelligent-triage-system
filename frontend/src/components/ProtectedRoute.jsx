@@ -18,27 +18,28 @@ function ProtectedRoute({ children, role }) {
     return <Navigate to="/login" />;
   }
 
-  // ❌ Not logged in
+  // Not logged in
   if (!token || !user) {
     return <Navigate to="/login" />;
   }
 
-  // ❌ Token expired check
+  // Token expired check
   try {
     const decoded = jwtDecode(token);
+    // eslint-disable-next-line react-hooks/purity
     const currentTime = Date.now() / 1000;
 
     if (decoded.exp < currentTime) {
       localStorage.clear();
       return <Navigate to="/login" />;
     }
-  } catch (error) {
-    console.error("Invalid token:", error);
+  } catch {
+    console.error("Invalid token:");
     localStorage.clear();
     return <Navigate to="/login" />;
   }
 
-  // ❌ Role mismatch
+  // Role mismatch
   if (role && user.role !== role) {
 
     // Strict fallback (safer)
@@ -54,7 +55,7 @@ function ProtectedRoute({ children, role }) {
     }
   }
 
-  // ✅ Allowed
+  //  Allowed
   return children;
 }
 
