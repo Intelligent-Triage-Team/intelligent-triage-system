@@ -24,6 +24,7 @@ import Chatbot from "./components/Chatbot";
 import ImageAnalysis from "./components/ImageAnalysis";
 import Footer from "./components/Footer";
 import AIDiagnosis from "./pages/services/AIDiagnosis";
+import AdvancedHealthAssistant from "./pages/services/AdvancedHealthAssistant";
 import EmergencyTriage from "./pages/services/EmergencyTriage";
 import Telemedicine from "./pages/services/Telemedicine";
 import PatientMonitoring from "./pages/services/PatientMonitoring";
@@ -179,6 +180,7 @@ function App() {
           <Route path="/edit-doctor/:id" element={<ProtectedRoute role="admin"><EditDoctor /></ProtectedRoute>} />
           
           {/* Individual Service Routes - Still accessible for direct links */}
+          <Route path="/services/advanced-health-assistant" element={<ProtectedRoute><AdvancedHealthAssistant /></ProtectedRoute>} />
           <Route path="/services/ai-diagnosis" element={<ProtectedRoute><AIDiagnosis /></ProtectedRoute>} />
           <Route path="/services/emergency-triage" element={<ProtectedRoute><EmergencyTriage /></ProtectedRoute>} />
           <Route path="/services/telemedicine" element={<ProtectedRoute><Telemedicine /></ProtectedRoute>} />

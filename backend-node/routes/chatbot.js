@@ -32,6 +32,7 @@ const healthKnowledge = {
     "fever": "Treatment: Acetaminophen or Ibuprofen, cool compresses. Advice: Stay hydrated. If it gets too high, please see a doctor.",
     "headache": "Treatment: Rest, hydration. Advice: Drink a big glass of water, sometimes headaches are just your body asking for hydration!",
     "stomach": "Treatment: Bland diet (BRAT: Bananas, Rice, Applesauce, Toast). Advice: Try some ginger tea, it's very soothing for the stomach.",
+    "insomnia": "I understand you're having trouble sleeping. Try a calming bedtime routine: dim lights, limit screens, deep breathing, and maybe a warm drink. If it continues, consider talking to a doctor about sleep hygiene or potential underlying issues.",
 };
 
 const getChatResponse = async (message, history = [], userId) => {
