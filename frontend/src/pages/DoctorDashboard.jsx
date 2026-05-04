@@ -4,6 +4,9 @@ import API from "../api/api";
 function DoctorDashboard() {
 
   const [patients, setPatients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("all");
+  
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
   const [availability, setAvailability] = useState({
@@ -13,7 +16,7 @@ function DoctorDashboard() {
 const [selectedPatient, setSelectedPatient] = useState(null);
 const [showProfile, setShowProfile] = useState(false);
 const [patientHistory, setPatientHistory] = useState([]);
-const patientsPerPage = 10;
+const patientsPerPage = 5;
 const [profileHistory, setProfileHistory] = useState([]);
 
 const completeCase = async (triageId) => {
@@ -125,7 +128,29 @@ const scheduleAppointment = async (triageId) => {
 };
 const indexOfLast = currentPage * patientsPerPage;
 const indexOfFirst = indexOfLast - patientsPerPage;
-const currentPatients = patients.slice(indexOfFirst, indexOfLast);
+const filteredPatients = patients.filter((p) => {
+  const patientName = p.patient_name
+    ?.toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const search = searchTerm
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const matchesSearch = patientName.includes(search);
+
+  const matchesSeverity =
+    severityFilter === "all"
+      ? true
+      : p.severity?.toLowerCase() === severityFilter;
+
+  return matchesSearch && matchesSeverity;
+});
+
+const currentPatients = filteredPatients.slice(indexOfFirst, indexOfLast);
+const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
 const handleChange = (e) => {
   setAvailability({
     ...availability,
@@ -221,52 +246,89 @@ return (
 }}>
 
   {/* Emergency */}
-  <div style={{
-    background: "#fdecea",
-    color: "#c0392b",
-    padding: "12px 18px",
-    borderRadius: "10px",
-    fontWeight: "600",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.05)"
-  }}>
-    🔴 <span>Emergency:</span> 
+  <div
+    onClick={() => setSeverityFilter("emergency")}
+    style={{
+      cursor: "pointer",
+      background: "#fdecea",
+      color: "#c0392b",
+      padding: "12px 18px",
+      borderRadius: "10px",
+      fontWeight: "600",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      boxShadow:
+        severityFilter === "emergency"
+          ? "0 0 0 3px #e74c3c"
+          : "0 2px 6px rgba(0,0,0,0.05)"
+    }}
+  >
+    🔴 <span>Emergency:</span>
     <strong>{patients.filter(p => p.severity === "emergency").length}</strong>
   </div>
 
   {/* Urgent */}
-  <div style={{
-    background: "#fff4e5",
-    color: "#e67e22",
-    padding: "12px 18px",
-    borderRadius: "10px",
-    fontWeight: "600",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.05)"
-  }}>
-    🟠 <span>Urgent:</span> 
+  <div
+    onClick={() => setSeverityFilter("urgent")}
+    style={{
+      cursor: "pointer",
+      background: "#fff4e5",
+      color: "#e67e22",
+      padding: "12px 18px",
+      borderRadius: "10px",
+      fontWeight: "600",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      boxShadow:
+        severityFilter === "urgent"
+          ? "0 0 0 3px #f39c12"
+          : "0 2px 6px rgba(0,0,0,0.05)"
+    }}
+  >
+    🟠 <span>Urgent:</span>
     <strong>{patients.filter(p => p.severity === "urgent").length}</strong>
   </div>
 
   {/* Normal */}
-  <div style={{
-    background: "#eafaf1",
-    color: "#27ae60",
-    padding: "12px 18px",
-    borderRadius: "10px",
-    fontWeight: "600",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.05)"
-  }}>
-    🟢 <span>Normal:</span> 
+  <div
+    onClick={() => setSeverityFilter("normal")}
+    style={{
+      cursor: "pointer",
+      background: "#eafaf1",
+      color: "#27ae60",
+      padding: "12px 18px",
+      borderRadius: "10px",
+      fontWeight: "600",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      boxShadow:
+        severityFilter === "normal"
+          ? "0 0 0 3px #27ae60"
+          : "0 2px 6px rgba(0,0,0,0.05)"
+    }}
+  >
+    🟢 <span>Normal:</span>
     <strong>{patients.filter(p => p.severity === "normal").length}</strong>
   </div>
+
+  {/* Show All */}
+  <button
+    onClick={() => setSeverityFilter("all")}
+    style={{
+      cursor: "pointer",
+      padding: "12px 18px",
+      border: "none",
+      borderRadius: "10px",
+      fontWeight: "600",
+      background: "#34495e",
+      color: "white"
+    }}
+  >
+    Show All
+  </button>
 
 </div>
 <div className="container">
@@ -301,9 +363,27 @@ return (
   </p>
 )}
 </div>
-<div style={{ overflowX: "auto" }}>
-      <table style={{
+<input
+  type="text"
+  placeholder="Search patient by name..."
+  value={searchTerm}
+  onChange={(e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  }}
+  style={{
+    padding: "10px",
+    width: "300px",
+    maxWidth: "100%",
+    marginBottom: "15px",
+    borderRadius: "8px",
+    border: "1px solid #ccc"
+  }}
+/>
+<div style={{ overflowX: "auto", width: "100%" }}>
+<table style={{
   width: "100%",
+  minWidth: "900px",
   borderCollapse: "separate",
   borderSpacing: "0 10px"
 }}>
@@ -453,7 +533,7 @@ return (
     borderRadius: "5px"
   }}
 >
-  Dtailes
+  Detailes
 </button>
 </td>
 </tr>
@@ -488,23 +568,24 @@ return (
   </button>
 
   <span style={{ fontWeight: "bold" }}>
-    Page {currentPage}
+    Page {currentPage} of {totalPages || 1}
   </span>
 
-  <button 
-    onClick={() => setCurrentPage(currentPage + 1)}
-    style={{
-      padding: "10px 20px",
-      borderRadius: "6px",
-      border: "none",
-      background: "#3498db",
-      color: "white",
-      cursor: "pointer",
-      width: "120px"
-    }}
-  >
-    Next
-  </button>
+<button 
+  onClick={() => setCurrentPage(currentPage + 1)}
+  disabled={currentPage >= totalPages}
+  style={{
+    padding: "10px 20px",
+    borderRadius: "6px",
+    border: "none",
+    background: currentPage >= totalPages ? "#95a5a6" : "#3498db",
+    color: "white",
+    cursor: currentPage >= totalPages ? "not-allowed" : "pointer",
+    width: "120px"
+  }}
+>
+  Next
+</button>
 </div>
 {showProfile && selectedPatient && (
   <div style={{
@@ -689,11 +770,44 @@ return (
                 }}
               >
                 <p><b>Disease:</b> {item.predicted_disease}</p>
-                <p><b>Severity:</b> {item.severity}</p>
-                <p><b>Confidence:</b> {item.prediction_confidence}</p>
-                <p><b>Appointment:</b> {item.appointment_date
-                  ? new Date(item.appointment_date).toLocaleString()
-                  : "-"}</p>
+
+<p>
+  <b>Severity:</b>
+  <span
+    style={{
+      marginLeft: "8px",
+      padding: "4px 10px",
+      borderRadius: "20px",
+      color: "white",
+      fontSize: "12px",
+      fontWeight: "600",
+      background:
+        item.severity === "emergency"
+          ? "#e74c3c"
+          : item.severity === "urgent"
+          ? "#f39c12"
+          : "#27ae60"
+    }}
+  >
+    {item.severity?.toUpperCase()}
+  </span>
+</p>
+
+<p>
+  <b>Confidence:</b>{" "}
+  {(
+    item.prediction_confidence > 1
+      ? item.prediction_confidence
+      : item.prediction_confidence * 100
+  ).toFixed(2)}%
+</p>
+
+<p>
+  <b>Appointment:</b>{" "}
+  {item.appointment_date
+    ? new Date(item.appointment_date).toLocaleString()
+    : "-"}
+</p>
               </div>
             ))
           )}

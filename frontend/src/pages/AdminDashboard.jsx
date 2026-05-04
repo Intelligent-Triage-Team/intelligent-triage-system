@@ -8,16 +8,31 @@ import { useNavigate } from "react-router-dom";
 function AdminDashboard() {
     const navigate = useNavigate();
   const [stats, setStats] = useState(null);
-
+  const [doctorAvailability, setDoctorAvailability] = useState([]);
+const [workload, setWorkload] = useState([]);
+const [emergencies, setEmergencies] = useState([]);
+const [searchUser, setSearchUser] = useState("");
+const [currentPage, setCurrentPage] = useState(1);
+const usersPerPage = 5;
   useEffect(() => {
+
+  const fetchStats = () => {
     API.get("/admin/stats", {
-  headers: {
-    Authorization: localStorage.getItem("token")
-  }
-})
-  .then(res => setStats(res.data))
+      headers: {
+        Authorization: localStorage.getItem("token")
+      }
+    })
+      .then(res => setStats(res.data))
       .catch(err => console.error(err));
-  }, []);
+  };
+
+  fetchStats();
+
+  const interval = setInterval(fetchStats, 5000);
+
+  return () => clearInterval(interval);
+
+}, []);
 const [users, setUsers] = useState([]);
     useEffect(() => {
   API.get("/admin/users", {
@@ -26,6 +41,33 @@ const [users, setUsers] = useState([]);
   }
 })
   .then(res => setUsers(res.data))
+    .catch(err => console.error(err));
+}, []);
+useEffect(() => {
+  API.get("/admin/doctors-availability", {
+    headers: {
+      Authorization: localStorage.getItem("token")
+    }
+  })
+    .then(res => setDoctorAvailability(res.data))
+    .catch(err => console.error(err));
+}, []);
+useEffect(() => {
+  API.get("/admin/doctor-workload", {
+    headers: {
+      Authorization: localStorage.getItem("token")
+    }
+  })
+    .then(res => setWorkload(res.data))
+    .catch(err => console.error(err));
+}, []);
+useEffect(() => {
+  API.get("/admin/emergency-list", {
+    headers: {
+      Authorization: localStorage.getItem("token")
+    }
+  })
+    .then(res => setEmergencies(res.data))
     .catch(err => console.error(err));
 }, []);
 const deleteUser = async (user) => {
@@ -38,7 +80,7 @@ const deleteUser = async (user) => {
     }
 
     // 2️⃣ Confirmation popup
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm(`Delete ${user.role}: ${user.name}?`)) return;
 
     const res = await API.delete(`/admin/user/${user.id}`);
 const data = res.data; // ✅
@@ -90,6 +132,16 @@ const data = res.data; // ✅
     console.error(error);
   }
 };
+const filteredUsers = users.filter(user =>
+  user.name.toLowerCase().includes(searchUser.toLowerCase())
+);
+
+const indexOfLast = currentPage * usersPerPage;
+const indexOfFirst = indexOfLast - usersPerPage;
+
+const currentUsers = filteredUsers.slice(indexOfFirst, indexOfLast);
+
+const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
   return (
     <div className="dashboard bg-gray-100 min-h-screen p-6">
 
@@ -116,8 +168,71 @@ const data = res.data; // ✅
           <h3>Appointments</h3>
           <p>{stats.total_appointments}</p>
         </div>
-
+<div className="dashboard-card bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition">
+  <h3>Total Triage Cases</h3>
+  <p>{stats.total_predictions}</p>
+</div>
       </div>
+      <h2 style={{ textAlign: "center", marginTop: "40px" }}>
+  Doctor Availability
+</h2>
+
+<div className="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Specialization</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {doctorAvailability.map((doc) => (
+        <tr key={doc.id}>
+          <td>{doc.name}</td>
+          <td>{doc.specialization}</td>
+          <td>{doc.available_from}</td>
+          <td>{doc.available_to}</td>
+          <td>
+  {(() => {
+    const now = new Date();
+
+    const current =
+      now.getHours() * 60 + now.getMinutes();
+
+    const fromParts = doc.available_from.split(":");
+    const toParts = doc.available_to.split(":");
+
+    const from =
+      parseInt(fromParts[0]) * 60 +
+      parseInt(fromParts[1]);
+
+    const to =
+      parseInt(toParts[0]) * 60 +
+      parseInt(toParts[1]);
+
+    const isAvailable = current >= from && current <= to;
+
+    return (
+      <span
+        style={{
+          color: isAvailable ? "green" : "red",
+          fontWeight: "bold"
+        }}
+      >
+        {isAvailable ? "Available" : "Unavailable"}
+      </span>
+    );
+  })()}
+</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
       <h2>Triage Cases</h2>
 
@@ -139,6 +254,34 @@ const data = res.data; // ✅
         </div>
 
       </div>
+<h2 style={{ marginTop: "40px" }}>Patient Flow Monitor</h2>
+
+<div className="card-container grid grid-cols-1 sm:grid-cols-3 gap-6 mt-4">
+
+  <div className="dashboard-card bg-yellow-100 p-5 rounded-xl shadow-md">
+    <h3>Waiting</h3>
+    <p style={{ fontSize: "28px", fontWeight: "bold" }}>
+      {stats.waiting_cases}
+    </p>
+  </div>
+
+  <div className="dashboard-card bg-blue-100 p-5 rounded-xl shadow-md">
+    <h3>Scheduled</h3>
+    <p style={{ fontSize: "28px", fontWeight: "bold" }}>
+      {stats.scheduled_cases}
+    </p>
+  </div>
+
+  <div className="dashboard-card bg-green-100 p-5 rounded-xl shadow-md">
+    <h3>Completed</h3>
+    <p style={{ fontSize: "28px", fontWeight: "bold" }}>
+      {stats.completed_cases}
+    </p>
+  </div>
+
+</div>
+
+
 <h2>Triage Distribution</h2>
 
 <div
@@ -175,6 +318,73 @@ const data = res.data; // ✅
     </PieChart>
   </div>
 </div>
+      <h2 style={{ textAlign: "center", marginTop: "40px" }}>
+  Doctor Workload
+</h2>
+<div className="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Doctor</th>
+        <th>Specialization</th>
+        <th>Scheduled Appointments</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {workload.map((doc) => (
+        <tr key={doc.id}>
+          <td>{doc.name}</td>
+          <td>{doc.specialization}</td>
+          <td>
+            <b>{doc.total_appointments}</b>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<h2 style={{ textAlign: "center", marginTop: "40px", color: "#e74c3c" }}>
+  Recent Emergency Cases
+</h2>
+
+<div className="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Patient</th>
+        <th>Disease</th>
+        <th>Time</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {emergencies.map((item) => (
+        <tr key={item.id}>
+          <td>{item.patient_name}</td>
+          <td>{item.predicted_disease}</td>
+          <td>
+            {new Date(item.created_at).toLocaleString()}
+          </td>
+          <td>
+            <span style={{
+              color:
+                item.status === "completed"
+                  ? "green"
+                  : item.status === "scheduled"
+                  ? "blue"
+                  : "red",
+              fontWeight: "bold"
+            }}>
+              {item.status || "waiting"}
+            </span>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 <h2 style={{ textAlign: "center", marginTop: "50px" }}>
   User Management
 </h2>
@@ -187,12 +397,34 @@ const data = res.data; // ✅
     + Add Doctor
   </button>
 </div>
-
+<input
+  type="text"
+  placeholder="Search user by name..."
+  value={searchUser}
+  onChange={(e) => {
+  setSearchUser(e.target.value);
+  setCurrentPage(1);
+}}
+  style={{
+    padding: "10px",
+    width: "300px",
+    marginBottom: "15px",
+    borderRadius: "8px",
+    border: "1px solid #ccc"
+  }}
+/>
 {users.length === 0 && (
   <p style={{ textAlign: "center", marginTop: "20px" }}>
     No users found
   </p>
 )}
+<p style={{
+  marginBottom: "10px",
+  color: "#555",
+  fontWeight: "500"
+}}>
+  Showing {currentUsers.length} of {filteredUsers.length} users
+</p>
 <div className="container">
   <table>
     <thead>
@@ -207,21 +439,44 @@ const data = res.data; // ✅
     </thead>
 
     <tbody>
-      {users.map(user => (
+      {currentUsers.map(user => (
         <tr key={user.id}>
           <td>{user.id}</td>
           <td>{user.name}</td>
           <td>{user.email}</td>
-          <td>
+     <td>
   {user.role === "doctor" ? (
-    <span style={{ color: "green", fontWeight: "bold" }}>
+    <span
+      style={{
+        background: "#2ecc71",
+        color: "white",
+        padding: "6px 12px",
+        borderRadius: "20px",
+        fontWeight: "bold"
+      }}
+    >
       Doctor
+    </span>
+  ) : user.role === "admin" ? (
+    <span
+      style={{
+        background: "#e74c3c",
+        color: "white",
+        padding: "6px 12px",
+        borderRadius: "20px",
+        fontWeight: "bold"
+      }}
+    >
+      Admin
     </span>
   ) : (
     <select
       value={user.role}
-      disabled={user.role === "admin"}
       onChange={(e) => updateRole(user.id, e.target.value)}
+      style={{
+        padding: "6px",
+        borderRadius: "6px"
+      }}
     >
       <option value="patient">Patient</option>
       <option value="admin">Admin</option>
@@ -246,9 +501,25 @@ const data = res.data; // ✅
 </button>
 )}
 
+ {user.role === "admin" ? (
+  <button
+    disabled
+    style={{
+      background: "#bdc3c7",
+      color: "white",
+      border: "none",
+      padding: "6px 12px",
+      borderRadius: "5px",
+      cursor: "not-allowed"
+    }}
+  >
+    Protected
+  </button>
+) : (
   <button onClick={() => deleteUser(user)}>
     Delete
   </button>
+)}
 </td>
         </tr>
       ))}
@@ -257,7 +528,31 @@ const data = res.data; // ✅
   </table>
 </div>
 
+<div style={{
+  display: "flex",
+  justifyContent: "center",
+  gap: "15px",
+  marginTop: "20px",
+  alignItems: "center"
+}}>
+  <button
+    onClick={() => setCurrentPage(currentPage - 1)}
+    disabled={currentPage === 1}
+  >
+    Previous
+  </button>
 
+  <span>
+    Page {currentPage} of {totalPages || 1}
+  </span>
+
+  <button
+    onClick={() => setCurrentPage(currentPage + 1)}
+    disabled={currentPage === totalPages}
+  >
+    Next
+  </button>
+</div>
 <button 
   className="btn-add"
   onClick={() => navigate("/add-doctor")}
