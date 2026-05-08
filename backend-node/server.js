@@ -34,6 +34,8 @@ const patientRoutes = require("./routes/patient");
 app.use("/", patientRoutes);
 const adminRoutes = require("./routes/admin");
 app.use("/", adminRoutes);
+const chatbotRoutes = require("./routes/chatbot");
+app.use("/chatbot", chatbotRoutes);
 
 
 app.get("/", (req, res) => {

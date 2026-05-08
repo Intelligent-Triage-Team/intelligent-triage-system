@@ -19,7 +19,13 @@ import AddDoctor from "./pages/doctor/AddDoctor";
 import EditDoctor from "./pages/doctor/EditDoctor";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import Chatbot from "./components/Chatbot";
+import Footer from "./components/Footer";
+import About from "./pages/About";
+import Services from "./pages/Services";
+import Contact from "./pages/Contact";
+import ServicesPortal from "./pages/ServicesPortal";
+// import Header from "./components/Header";
 function App() {
 
   // ADD HERE
@@ -84,18 +90,34 @@ const [showNotif, setShowNotif] = useState(false);
       <ToastContainer />
    <nav 
   className={`navbar ${scrolled ? "navbar-scroll" : ""}`} 
-//   style={{
-//     display: "flex",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     padding: "15px 30px",
-// minHeight: "60px"
-  // }}
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "15px 30px",
+minHeight: "60px"
+  }}
 >
 {/* LEFT SIDE */}
-<div style={{ display: "flex", gap: "15px" }}>
+<div
+  style={{
+    display: "flex",
+    gap: "18px",
+    alignItems: "center",
+    fontSize: "17px",
+    fontWeight: "800",
+    fontWeight: "bold",
+  }}
+>
   <Link to="/">Home</Link>
-
+  <Link to="/about">About</Link>
+  <Link to="/services">Services</Link>
+  <Link to="/contact">Contact</Link>
+  <Link to="/services-portal">Services-portal</Link>
+{/* <Link to="/about" style={linkStyle}>About</Link>
+      <Link to="/services" style={linkStyle}>Services</Link>
+      <Link to="/contact" style={linkStyle}>Contact</Link>
+      <Link to="/services-portal" style={linkStyle}>Portal</Link> */}
 
 
   {user?.role === "patient" && (
@@ -104,6 +126,8 @@ const [showNotif, setShowNotif] = useState(false);
       <Link to="/result">Result</Link>
       <Link to="/history">History</Link>
       <Link to="/profile">Profile</Link>
+      <Link to="/chatbot">Chatbot</Link>
+
     </>
   )}
 
@@ -247,6 +271,14 @@ const [showNotif, setShowNotif] = useState(false);
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
+        <Route path="/chatbot" element={<Chatbot />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/services-portal" element={<ServicesPortal />} />
+
+
+
         <Route
   path="/predict"
   element={
@@ -313,6 +345,8 @@ const [showNotif, setShowNotif] = useState(false);
   }
 />
       </Routes>
+      {user && <Chatbot />}
+      <Footer />
 
     </div>
   );

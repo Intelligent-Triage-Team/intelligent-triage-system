@@ -219,7 +219,7 @@ const whyCard = {
   </div>
 </div>
 {/* FOOTER */}
-<div
+{/* <div
   style={{
     background: "#2c3e50",
     color: "white",
@@ -239,7 +239,7 @@ const whyCard = {
   <p style={{ marginTop: "15px", fontSize: "13px", color: "#aaa" }}>
     © 2026 All Rights Reserved
   </p>
-</div>
+</div> */}
   </div>
 );
 }
