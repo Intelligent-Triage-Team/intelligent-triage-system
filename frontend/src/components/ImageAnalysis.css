@@ -1,0 +1,368 @@
+/* Image Analysis Component Styles */
+
+.image-analysis-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-lighter) 100%);
+  padding: var(--spacing-xl) 0;
+}
+
+/* Upload Area */
+.upload-area {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-area:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-lighter);
+  background-opacity: 0.1;
+}
+
+.upload-placeholder {
+  color: var(--gray-500);
+}
+
+.upload-icon {
+  font-size: 3rem;
+  font-weight: 300;
+  color: var(--gray-400);
+  margin-bottom: var(--spacing);
+}
+
+/* Image Preview */
+.image-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+
+.remove-btn {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: var(--emergency);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  background: var(--emergency-dark);
+}
+
+/* Results Section */
+.result-summary {
+  margin-bottom: var(--spacing-lg);
+}
+
+.detected-injury h4,
+.confidence-meter h4,
+.triage-level h4,
+.severity-assessment h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-sm);
+}
+
+.injury-type {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  display: inline-block;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary-lighter);
+  border-radius: var(--radius);
+  margin-top: var(--spacing-xs);
+}
+
+/* Confidence Meter */
+.confidence-meter {
+  margin-top: var(--spacing-md);
+}
+
+.progress {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: var(--spacing-sm) 0;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.5s ease;
+  border-radius: var(--radius);
+}
+
+.confidence-text {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+/* Triage Level */
+.triage-level {
+  margin-top: var(--spacing-md);
+}
+
+.triage-level .badge {
+  font-size: 0.875rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Severity Assessment */
+.severity-assessment {
+  margin-top: var(--spacing-md);
+}
+
+.severity-assessment p {
+  color: var(--gray-600);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Recommendations */
+.recommendations {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--gray-200);
+}
+
+.recommendations h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-md);
+}
+
+.recommendations ul {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.recommendations li {
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.5;
+}
+
+.recommendations li:last-child {
+  margin-bottom: 0;
+}
+
+/* No Results State */
+.no-results {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.no-results-icon {
+  font-size: 4rem;
+  font-weight: 300;
+  color: var(--gray-300);
+  margin-bottom: var(--spacing);
+}
+
+.no-results h4 {
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* History Section */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+}
+
+.history-item {
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  transition: all 0.2s ease;
+}
+
+.history-item:hover {
+  background: var(--gray-100);
+  transform: translateY(-1px);
+}
+
+.history-item .injury-type {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-xs);
+  background: none;
+  padding: 0;
+}
+
+.history-item .confidence-text {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .image-analysis-container {
+    padding: var(--spacing) 0;
+  }
+  
+  .upload-area {
+    min-height: 200px;
+    padding: var(--spacing-lg);
+  }
+  
+  .upload-icon {
+    font-size: 2rem;
+  }
+  
+  .image-preview img {
+    max-height: 150px;
+  }
+  
+  .no-results-icon {
+    font-size: 3rem;
+  }
+}
+
+/* Loading States */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Alert Styling */
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius);
+  border: 1px solid;
+  margin-bottom: var(--spacing);
+}
+
+.alert-danger {
+  background: var(--emergency-light);
+  color: var(--emergency);
+  border-color: var(--emergency);
+}
+
+/* Button Enhancements */
+.btn-block {
+  width: 100%;
+}
+
+.btn-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: 1.125rem;
+}
+
+/* Card Enhancements for Image Analysis */
+.card {
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--gray-50), var(--gray-100));
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--spacing-lg);
+}
+
+.card-header h3 {
+  margin: 0;
+  color: var(--gray-800);
+  font-size: 1.25rem;
+}
+
+.card-body {
+  padding: var(--spacing-lg);
+}
+
+/* Row and Column Layout */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -var(--spacing-md);
+}
+
+.col-md-6 {
+  flex: 0 0 50%;
+  max-width: 50%;
+  padding: 0 var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+  .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+/* Text Utilities */
+.text-center {
+  text-align: center;
+}
+
+.text-end {
+  text-align: right;
+}
+
+.text-muted {
+  color: var(--gray-500);
+}
+
+/* Margin Utilities */
+.me-2 {
+  margin-right: var(--spacing-sm);
+}
+
+.mt-3 {
+  margin-top: var(--spacing-md);
+}
+
+.mt-4 {
+  margin-top: var(--spacing-lg);
+}
+
+.mb-4 {
+  margin-bottom: var(--spacing-lg);
+}
+
+.ms-2 {
+  margin-left: var(--spacing-sm);
+}

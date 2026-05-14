@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import "../Services.css";
+import "./Services.css";
 
 const Services = () => {
     const services = [

@@ -25,6 +25,7 @@ import About from "./pages/About";
 import Services from "./pages/Services";
 import Contact from "./pages/Contact";
 import ServicesPortal from "./pages/ServicesPortal";
+import ImageAnalysis from './components/ImageAnalysis';
 // import Header from "./components/Header";
 function App() {
 
@@ -105,7 +106,7 @@ minHeight: "60px"
     gap: "18px",
     alignItems: "center",
     fontSize: "17px",
-    fontWeight: "800",
+    // fontWeight: "800",
     fontWeight: "bold",
   }}
 >
@@ -114,6 +115,7 @@ minHeight: "60px"
   <Link to="/services">Services</Link>
   <Link to="/contact">Contact</Link>
   <Link to="/services-portal">Services-portal</Link>
+  <Link to="/image-analysis">image-analysis</Link>
 {/* <Link to="/about" style={linkStyle}>About</Link>
       <Link to="/services" style={linkStyle}>Services</Link>
       <Link to="/contact" style={linkStyle}>Contact</Link>
@@ -276,6 +278,7 @@ minHeight: "60px"
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/services-portal" element={<ServicesPortal />} />
+        <Route path="/image-analysis" element={<ImageAnalysis />} />
 
 
 

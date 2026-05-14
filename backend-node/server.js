@@ -7,6 +7,7 @@ const cors = require("cors");
 // const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
+
 // const SECRET_KEY = "mysecretkey";
 
 
@@ -36,7 +37,8 @@ const adminRoutes = require("./routes/admin");
 app.use("/", adminRoutes);
 const chatbotRoutes = require("./routes/chatbot");
 app.use("/chatbot", chatbotRoutes);
-
+const imageAnalysisRoutes = require('./routes/imageAnalysis');
+app.use("/image-analysis", imageAnalysisRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Backend server running" });
