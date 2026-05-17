@@ -2,125 +2,227 @@ from flask import Flask, jsonify, request
 from nlp_processor import extract_symptoms
 import joblib
 
+# =====================================================
+# Flask App
+# =====================================================
 app = Flask(__name__)
 
-# Load model + encoder
+# =====================================================
+# Load Model
+# =====================================================
 model = joblib.load("models/disease_model.pkl")
 encoder = joblib.load("models/symptom_encoder.pkl")
 
-# Disease → triage mapping
+# =====================================================
+# Disease -> Triage Mapping
+# =====================================================
 triage_map = {
-    "Common Cold": "normal",
-    "Allergy": "normal",
-    "Acne": "normal",
-    "Fungal infection": "normal",
-    "GERD": "normal",
-    "Impetigo": "normal",
+    # Normal
+    "Common Cold": "Normal",
+    "Allergy": "Normal",
+    "Acne": "Normal",
+    "Fungal infection": "Normal",
+    "GERD": "Normal",
+    "Impetigo": "Normal",
+    "Psoriasis": "Normal",
+    "Arthritis": "Normal",
+    "Osteoarthristis": "Normal",
 
-    "Bronchial Asthma": "urgent",
-    "Pneumonia": "urgent",
-    "Tuberculosis": "urgent",
-    "Malaria": "urgent",
-    "Dengue": "urgent",
-    "Typhoid": "urgent",
-    "Hepatitis B": "urgent",
-    "Hepatitis C": "urgent",
-    "Hepatitis D": "urgent",
-    "Hepatitis E": "urgent",
-    "Jaundice": "urgent",
-    "Urinary tract infection": "urgent",
+    # Urgent
+    "Bronchial Asthma": "Urgent",
+    "Pneumonia": "Urgent",
+    "Tuberculosis": "Urgent",
+    "Malaria": "Urgent",
+    "Dengue": "Urgent",
+    "Typhoid": "Urgent",
+    "Hepatitis B": "Urgent",
+    "Hepatitis C": "Urgent",
+    "Hepatitis D": "Urgent",
+    "Hepatitis E": "Urgent",
+    "Jaundice": "Urgent",
+    "Urinary tract infection": "Urgent",
+    "Appendicitis": "Urgent",
+    "COPD": "Urgent",
+    "Kidney stone": "Urgent",
+    "Pancreatitis": "Urgent",
+    "Deep vein thrombosis": "Urgent",
 
-    "Heart attack": "emergency",
-    "Paralysis (brain hemorrhage)": "emergency",
-    "Hypoglycemia": "emergency"
+    # Emergency
+    "Heart attack": "Emergency",
+    "Paralysis (brain hemorrhage)": "Emergency",
+    "Hypoglycemia": "Emergency",
+    "Stroke": "Emergency",
+    "Anaphylaxis": "Emergency",
+    "Pulmonary embolism": "Emergency",
+    "Meningitis": "Emergency",
+    "Seizure epilepsy": "Emergency"
 }
 
+# =====================================================
+# Critical Symptoms Override
+# =====================================================
 critical_symptoms = [
     "chest_pain",
     "difficulty_breathing",
     "unconsciousness",
-    "severe_bleeding"
+    "severe_bleeding",
+    "loss_of_consciousness",
+    "trouble_speaking",
+    "drooping_face",
+    "arm_weakness",
+    "seizures"
 ]
 
-
+# =====================================================
+# Home Route
+# =====================================================
 @app.route("/")
 def home():
-    return jsonify({"message": "ML Triage API is running"})
+    return jsonify({
+        "message": "ML Triage API is running"
+    })
 
 
+# =====================================================
+# Health Route
+# =====================================================
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok"})
+    return jsonify({
+        "status": "running",
+        "model_loaded": True
+    })
 
 
+# =====================================================
+# Predict Route
+# =====================================================
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
-        text = data.get("text", "").lower()
 
+        # -------------------------------
+        # 1. Validate input
+        # -------------------------------
+        if not data:
+            return jsonify({"error": "No input data"}), 400
+
+        text = data.get("text", "").lower().strip()
+
+        if text == "":
+            return jsonify({"error": "Empty input"}), 400
+
+        # -------------------------------
+        # 2. Extract symptoms (NLP)
+        # -------------------------------
         symptoms = extract_symptoms(text)
-        if not symptoms:
-            return jsonify({
-                "predicted_disease": "Unknown",
-                "confidence": 0,
-                "triage_level": "normal",
-                "top3_predictions": []
-            }), 200
+        print("Extracted Symptoms:", symptoms)
 
+        if not symptoms:
+            return jsonify({"error": "No symptoms detected"}), 400
+
+        # -------------------------------
+        # 3. Filter valid symptoms
+        # -------------------------------
         valid_symptoms = [s for s in symptoms if s in encoder.classes_]
+        print("Valid Symptoms:", valid_symptoms)
 
         if not valid_symptoms:
-            return jsonify({
-                "predicted_disease": "Unknown",
-                "confidence": 0,
-                "triage_level": "normal",
-                "top3_predictions": []
-            }), 200
+            return jsonify({"error": "No valid symptoms"}), 400
 
+        # -------------------------------
+        # 4. Encode input
+        # -------------------------------
         encoded = encoder.transform([valid_symptoms])
 
+        # -------------------------------
+        # 5. Predict disease
+        # -------------------------------
         prediction = model.predict(encoded)
         probabilities = model.predict_proba(encoded)
 
         disease = prediction[0]
-        confidence = float(probabilities.max() * 100)
 
-        # top 3 predictions
+        # -------------------------------
+        # 6. Confidence (FIXED & STABLE)
+        # -------------------------------
+        model_confidence = float(probabilities.max() * 100)
+        symptom_count = len(valid_symptoms)
+
+        confidence = model_confidence + (symptom_count * 3)
+
+        if symptom_count >= 7 and model_confidence > 30:
+            confidence += 15
+
+        confidence = min(confidence, 95)
+
+        # -------------------------------
+        # 7. Top 3 predictions
+        # -------------------------------
         top3_idx = probabilities[0].argsort()[-3:][::-1]
 
-        top3 = []
-        for i in range(3):
-            top3.append({
-                "disease": model.classes_[top3_idx[i]],
-                "prob": round(float(probabilities[0][top3_idx[i]] * 100), 2)
+        top3_predictions = []
+        for i in top3_idx:
+            top3_predictions.append({
+                "disease": model.classes_[i],
+                "model_probability": round(float(probabilities[0][i] * 100), 2)
             })
 
-        # triage level (safe lowercase)
-        triage_level = triage_map.get(disease, "normal").lower()
+        # -------------------------------
+        # 8. Triage decision (FIXED)
+        # -------------------------------
+        triage_level = triage_map.get(disease, "Normal")
 
-        # emergency override
-        if any(sym in critical_symptoms for sym in symptoms):
-            triage_level = "emergency"
+        strong_critical = [
+            "chest_pain",
+            "difficulty_breathing",
+            "unconsciousness",
+            "severe_bleeding",
+            "seizures"
+        ]
 
+        stroke_set = {"trouble_speaking", "drooping_face", "arm_weakness"}
+
+        if any(sym in strong_critical for sym in valid_symptoms):
+            triage_level = "Emergency"
+        elif len(stroke_set.intersection(valid_symptoms)) >= 2:
+            triage_level = "Emergency"
+
+        # -------------------------------
+        # 9. Warning logic
+        # -------------------------------
+        if symptom_count <= 1:
+            warning = "Very few symptoms provided."
+        elif confidence < 40:
+            warning = "Low confidence prediction."
+        elif confidence < 70:
+            warning = "Moderate confidence prediction."
+        else:
+            warning = "High confidence prediction."
+
+        # -------------------------------
+        # 10. Final response
+        # -------------------------------
         return jsonify({
+            "input_text": text,
+            "detected_symptoms": valid_symptoms,
+            "symptom_count": symptom_count,
             "predicted_disease": disease,
             "confidence": round(confidence, 2),
             "triage_level": triage_level,
-            "top3_predictions": top3
+            "top3_predictions": top3_predictions,
+            "warning": warning
         })
 
     except Exception as e:
-        print("ERROR:", e)
+        return jsonify({"error": str(e)}), 500
 
-        # 
-        return jsonify({
-            "predicted_disease": "Unknown",
-            "confidence": 0,
-            "triage_level": "normal",
-            "top3_predictions": []
-        }), 500
-
-
+#  =====================================================
+# Run App
+# =====================================================
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(
+        debug=True,
+        port=5000
+    )

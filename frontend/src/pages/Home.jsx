@@ -1,6 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import "./Home.css";
 
+import {
+  FaBrain,
+  FaCalendarCheck,
+  FaUserMd,
+  FaBolt,
+  FaRobot,
+  FaHospital
+} from "react-icons/fa";
+
 function Home() {
   const navigate = useNavigate();
 
@@ -19,7 +28,7 @@ function Home() {
 
   return (
     <div>
-      
+
       {/* HERO */}
       <div className="hero">
 
@@ -39,14 +48,7 @@ function Home() {
 
           {!token && (
             <p className="signup-text">
-              Don't have an account?{" "}
-              <span
-                className="signup-link"
-                onClick={() => navigate("/signup")}
-              >
-                Signup
-              </span>
-            </p>
+            Don't have an account?{" "} <a href="/signup" className="signup-link"> Signup</a></p>
           )}
         </div>
 
@@ -67,21 +69,33 @@ function Home() {
         <div className="services-container">
 
           <div className="service-card">
-            <div className="service-icon">🧠</div>
+            <div className="service-icon">
+              <FaBrain />
+            </div>
             <h3>AI Triage</h3>
-            <p>Automatically classify patients based on urgency using intelligent algorithms.</p>
+            <p>
+              Automatically classify patients based on urgency using intelligent algorithms.
+            </p>
           </div>
 
           <div className="service-card">
-            <div className="service-icon">📅</div>
+            <div className="service-icon">
+              <FaCalendarCheck />
+            </div>
             <h3>Appointment Scheduling</h3>
-            <p>Efficiently book and manage doctor appointments in real time.</p>
+            <p>
+              Efficiently book and manage doctor appointments in real time.
+            </p>
           </div>
 
           <div className="service-card">
-            <div className="service-icon">👨‍⚕️</div>
+            <div className="service-icon">
+              <FaUserMd />
+            </div>
             <h3>Doctor Management</h3>
-            <p>Organize doctors, availability, and patient assignments seamlessly.</p>
+            <p>
+              Organize doctors, availability, and patient assignments seamlessly.
+            </p>
           </div>
 
         </div>
@@ -94,25 +108,32 @@ function Home() {
         <div className="why-container">
 
           <div className="why-card">
-            <div className="why-icon">⚡</div>
+            <div className="why-icon">
+              <FaBolt />
+            </div>
             <h3>Fast Decision Making</h3>
             <p>Instant patient classification reduces waiting time.</p>
           </div>
 
           <div className="why-card">
-            <div className="why-icon">🤖</div>
+            <div className="why-icon">
+              <FaRobot />
+            </div>
             <h3>AI Powered</h3>
             <p>Uses intelligent models to improve accuracy.</p>
           </div>
 
           <div className="why-card">
-            <div className="why-icon">🏥</div>
+            <div className="why-icon">
+              <FaHospital />
+            </div>
             <h3>Hospital Efficiency</h3>
             <p>Optimizes doctor workload and patient flow.</p>
           </div>
 
         </div>
       </div>
+
     </div>
   );
 }

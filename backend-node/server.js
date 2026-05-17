@@ -15,7 +15,10 @@ const app = express();
 // import nodemailer from "nodemailer";
 // import crypto from "crypto";
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
 app.use(express.json());
 const authRoutes = require("./routes/authRoutes");
 app.use("/", authRoutes);
@@ -1088,6 +1091,27 @@ app.get("/", (req, res) => {
 //     pass: "saws ixdi iljr kvtm"         // app password (no spaces)
 //   }
 // });
+app.post("/api/chat", (req, res) => {
+  const { message } = req.body;
+
+  let reply = "";
+  const text = message.toLowerCase();
+
+  if (text.includes("fever")) {
+    reply = "Fever may indicate infection. Drink water and rest.";
+  } 
+  else if (text.includes("headache")) {
+    reply = "Headache can be caused by stress or dehydration.";
+  } 
+  else if (text.includes("ራስ")) {
+    reply = "የራስ ህመም ብዙ ምክንያቶች ሊኖሩት ይችላሉ።";
+  } 
+  else {
+    reply = "Please describe your symptoms clearly.";
+  }
+
+  res.json({ reply });
+});// START SERVER
 const PORT = 3000;
 
 app.listen(PORT, () => {

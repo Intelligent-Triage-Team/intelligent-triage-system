@@ -10,11 +10,13 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Footer from "./components/Footer";
 import PatientForm from "./pages/PatientForm";
+import VoiceChatbot from "./components/VoiceChatbot";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Services from "./pages/Services";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -77,6 +79,7 @@ function App() {
 
   return (
     <div>
+      <VoiceChatbot />
       <ToastContainer />
 
       {/* ================= NAVBAR ================= */}
@@ -91,6 +94,7 @@ function App() {
           <Link to="/" className="nav-link">HOME</Link>
           <Link to="/about" className="nav-link">ABOUT</Link>
           <Link to="/contact" className="nav-link">CONTACT</Link>
+          <Link to="/services" className="nav-link">SERVICES</Link>
 
           {user?.role === "patient" && (
             <>
@@ -191,6 +195,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/services" element={<Services />} />
 
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
