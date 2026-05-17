@@ -4,12 +4,8 @@ import os
 import uuid
 import tempfile
 from werkzeug.utils import secure_filename
-try:
-    from image_classifier import injury_classifier
-    print("Using TensorFlow-based CNN classifier")
-except ImportError:
-    from simple_image_classifier import injury_classifier
-    print("Using simple mock classifier (TensorFlow not available)")
+from simple_image_classifier import injury_classifier
+print("Using simple mock classifier")
 import logging
 
 # Configure logging
@@ -204,11 +200,8 @@ def internal_error(e):
     }), 500
 
 if __name__ == '__main__':
-    # Initialize the classifier
+    # Initialize mock classifier
     injury_classifier.build_model()
-    
-    # Try to load pre-trained weights
-    injury_classifier.load_model()
     
     print("Image Classification API starting...")
     print(f"Upload folder: {UPLOAD_FOLDER}")

@@ -4,7 +4,12 @@ const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "abebe@hu",
-  database: "healthcare_db"
+  database: "healthcare_db",
+
+  // ✅ Ethiopia timezone
+  timezone: "+03:00"
+  // timezone: "+00:00"
+  
 });
 
 db.connect((err) => {

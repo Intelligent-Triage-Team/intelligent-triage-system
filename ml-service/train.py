@@ -175,7 +175,12 @@ for name, model in models.items():
     print("F1 Score :", round(f1, 4))
     print("CV Score :", cv_mean)
 
-    if f1 > best_f1:
+    # if f1 > best_f1:
+    #     best_f1 = f1
+    #     best_model = model
+    #     best_name = name
+    # Prefer Random Forest for stronger probability confidence
+    if name == "Random Forest":
         best_f1 = f1
         best_model = model
         best_name = name

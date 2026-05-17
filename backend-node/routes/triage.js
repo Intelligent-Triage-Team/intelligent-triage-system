@@ -195,10 +195,26 @@ router.post("/predict", authenticateToken, async (req, res) => {
 
     for (const doctor of doctors) {
 
-      const today = new Date().toISOString().split("T")[0];
+      const now = new Date();
 
-      let startTime = new Date(`${today}T${doctor.available_from}`);
-let endTime = new Date(`${today}T${doctor.available_to}`);
+      let startTime = new Date();
+      let endTime = new Date();
+      
+      const [startHour, startMinute] =
+        doctor.available_from.split(":");
+      
+      const [endHour, endMinute] =
+        doctor.available_to.split(":");
+      
+      startTime.setHours(startHour, startMinute, 0, 0);
+      endTime.setHours(endHour, endMinute, 0, 0);
+      
+      // ✅ IMPORTANT
+      // if doctor start time already passed,
+      // begin from CURRENT TIME
+      if (startTime < now) {
+        startTime = new Date(now);
+      }
       
 
       while (startTime < endTime) {

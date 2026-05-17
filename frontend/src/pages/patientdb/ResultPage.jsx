@@ -29,18 +29,36 @@ function ResultPage() {
 
       if (res.data) {
         setResult({
-          predicted_disease: res.data.predicted_disease,
+          predicted_disease:
+            res.data.predicted_disease || res.data.detected_injury,
+        
+          detected_injury:
+            res.data.detected_injury,
+        
           triage_level:
-            res.data.severity.charAt(0).toUpperCase() +
-            res.data.severity.slice(1),
-          confidence: res.data.prediction_confidence
+            (res.data.severity || res.data.triage_level)
+              ?.charAt(0)
+              .toUpperCase() +
+            (res.data.severity || res.data.triage_level)
+              ?.slice(1),
+        
+          confidence:
+            res.data.prediction_confidence || res.data.confidence,
+        
+          top3_predictions:
+            res.data.top3_predictions
         });
 
         setAppointment({
-  appointment_id: res.data.appointment_id,
-  doctor_name: res.data.doctor_name,
-  appointment_time: res.data.appointment_date
-});
+          appointment_id:
+            res.data.appointment_id || "Pending",
+        
+          doctor_name:
+            res.data.doctor_name || "Assigned Doctor",
+        
+          appointment_time:
+            res.data.appointment_date || null
+        });
       }
 
     } catch (error) {
@@ -131,29 +149,37 @@ if (!result) {
   borderRadius: "8px",
   background: "#f9f9f9"
 }}>
-  <p><b>🧬 Disease:</b> {result.predicted_disease}</p>
-
   <p>
-    <b>📊 Confidence:</b>{" "}
-    {(result.confidence > 1
-      ? result.confidence
-      : result.confidence * 100
-    ).toFixed(2)}%
-  </p>
+  <b>🧬 Disease:</b>{" "}
+  {result.predicted_disease || result.detected_injury}
+</p>
+
+<p>
+  <b>📊 Confidence:</b>{" "}
+  {(
+    Number(result.confidence || result.prediction_confidence) > 1
+      ? Number(result.confidence || result.prediction_confidence)
+      : Number(result.confidence || result.prediction_confidence) * 100
+  ).toFixed(2)}%
+</p>
   <div style={{
   height: "8px",
   background: "#ddd",
   borderRadius: "5px",
   marginTop: "5px"
 }}>
-  <div style={{
-    width: `${(result.confidence > 1
-      ? result.confidence
-      : result.confidence * 100)}%`,
+<div
+  style={{
+    width: `${
+      Number(result.confidence || result.prediction_confidence) > 1
+        ? Number(result.confidence || result.prediction_confidence)
+        : Number(result.confidence || result.prediction_confidence) * 100
+    }%`,
     height: "100%",
     background: "#3498db",
     borderRadius: "5px"
-  }} />
+  }}
+/>
 </div>
 </div>
    {result.top3_predictions && (
@@ -185,7 +211,7 @@ if (!result) {
 >
   <span>{item.disease}</span>
   <span style={{ fontWeight: "600" }}>
-    {item.prob}%
+  {item.model_probability}%
   </span>
 </div>
       ))}
@@ -216,9 +242,13 @@ if (!result) {
   <p><b>Doctor:</b> {appointment.doctor_name}</p>
 
   <p>
-    <b>Time:</b>{" "}
-    {new Date(appointment.appointment_time).toLocaleString()}
-  </p>
+  <b>Time:</b>{" "}
+  {appointment.appointment_time
+    ? new Date(
+        appointment.appointment_time
+      ).toLocaleString()
+    : "Pending"}
+</p>
 
   <p style={{ color: "#2ecc71", fontWeight: "600" }}>
     ✔ Scheduled
@@ -257,13 +287,12 @@ if (!result) {
     }}
   >
     🏠 Back Home
-  </button>
-
+  </button>    
 </div>
-    </div>
-    </div>
+</div>
+</div>
 
-  );
+);
 }
 
 export default ResultPage;

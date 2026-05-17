@@ -67,34 +67,36 @@ router.get("/my-history", authenticateToken, async (req, res) => {
     const patientId = patient[0].id;
 
     const [history] = await db.promise().query(
-  `
-  SELECT 
-    t.predicted_disease,
-    t.severity,
-    t.prediction_confidence,
-    t.created_at,
-    a.id AS appointment_id,  
-    a.appointment_date,
-    a.status AS appointment_status,
-    u2.name AS doctor_name   -- ✅ THIS IS IMPORTANT
-  FROM triage_results t
-  LEFT JOIN appointments a ON t.id = a.triage_id
-  LEFT JOIN doctors d ON a.doctor_id = d.id
-  LEFT JOIN users u2 ON d.user_id = u2.id   -- ✅ ADD THIS JOIN
-  WHERE t.patient_id = ?
-  ORDER BY t.created_at DESC
-  `,
-  [patientId]
-);
+      `
+      SELECT 
+        t.predicted_disease,
+        t.severity,
+        t.prediction_confidence,
+        t.created_at,
+        a.id AS appointment_id,
+        a.appointment_date,
+        a.status AS appointment_status,
+        u2.name AS doctor_name
+      FROM triage_results t
+      LEFT JOIN appointments a ON t.id = a.triage_id
+      LEFT JOIN doctors d ON a.doctor_id = d.id
+      LEFT JOIN users u2 ON d.user_id = u2.id
+      WHERE t.patient_id = ?
+      ORDER BY t.created_at DESC
+      `,
+      [patientId]
+    );
 
     res.json(history);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server Error"
+    });
   }
 });
-router.put("/appointment/:id/cancel", authenticateToken, async (req, res) => {
+router.put("/appointments/:id/cancel", authenticateToken, async (req, res) => {
   const appointmentId = req.params.id;
   const userId = req.user.id;
 

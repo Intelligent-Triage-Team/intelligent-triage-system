@@ -104,8 +104,15 @@ const ImageAnalysis = () => {
   };
 
   const getConfidenceColor = (confidence) => {
-    if (confidence >= 0.8) return 'var(--secondary-color)';
-    if (confidence >= 0.6) return 'var(--accent-color)';
+
+    if (confidence >= 80) {
+      return 'var(--secondary-color)';
+    }
+  
+    if (confidence >= 60) {
+      return 'var(--accent-color)';
+    }
+  
     return 'var(--emergency)';
   };
 
@@ -206,13 +213,13 @@ const ImageAnalysis = () => {
                         <div 
                           className="progress-bar"
                           style={{
-                            width: `${result.confidence * 100}%`,
+                            width: `${result.confidence}%`,
                             backgroundColor: getConfidenceColor(result.confidence)
                           }}
                         ></div>
                       </div>
                       <span className="confidence-text">
-                        {(result.confidence * 100).toFixed(1)}%
+                      {Number(result.confidence).toFixed(1)}%
                       </span>
                     </div>
 
@@ -238,7 +245,7 @@ const ImageAnalysis = () => {
                   <div className="recommendations">
                     <h4>Medical Recommendations:</h4>
                     <ul>
-                      {result.recommendations.map((rec, index) => (
+                      {result.recommendations?.map((rec, index) => (
                         <li key={index}>{rec}</li>
                       ))}
                     </ul>
@@ -303,7 +310,7 @@ const ImageAnalysis = () => {
                             {item.triage_level}
                           </span>
                           <div className="confidence-text">
-                            {(item.confidence * 100).toFixed(1)}%
+                          {Number(item.confidence).toFixed(1)}%
                           </div>
                         </div>
                       </div>

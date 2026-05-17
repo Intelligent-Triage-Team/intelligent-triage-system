@@ -53,5 +53,66 @@ router.put("/notifications/read/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Failed to update notification" });
   }
 });
+router.get("/", authenticateToken, async (req, res) => {
+
+  try {
+
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    let query = "";
+
+    // PATIENT
+    if (role === "patient") {
+
+      query = `
+        SELECT *
+        FROM notifications
+        WHERE patient_user_id = ?
+        ORDER BY created_at DESC
+      `;
+
+    }
+
+    // DOCTOR
+    else if (role === "doctor") {
+
+      query = `
+        SELECT *
+        FROM notifications
+        WHERE doctor_user_id = ?
+        ORDER BY created_at DESC
+      `;
+
+    }
+
+    // ADMIN
+    else if (role === "admin") {
+
+      query = `
+        SELECT *
+        FROM notifications
+        WHERE admin_user_id = ?
+        ORDER BY created_at DESC
+      `;
+
+    }
+
+    const [notifications] =
+      await db.promise().query(query, [userId]);
+
+    res.json(notifications);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Failed to fetch notifications"
+    });
+
+  }
+
+});
 
 module.exports = router;

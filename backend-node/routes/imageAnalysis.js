@@ -21,7 +21,6 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
   }
 });
-
 const fileFilter = (req, file, cb) => {
   // Allowed file types
   const allowedTypes = /jpeg|jpg|png|gif|bmp|tiff/;
@@ -88,6 +87,58 @@ const response = await axios.post("http://127.0.0.1:5001/classify-injury", formD
 });
 
       const analysisResult = response.data;
+      // Get symptom history for smarter integration
+const [previousPredictions] = await db.promise().query(
+  `SELECT predicted_disease, prediction_confidence
+   FROM triage_results
+   WHERE patient_id = ?
+   ORDER BY created_at DESC
+   LIMIT 1`,
+  [patientId]
+);
+
+// Default integrated confidence
+let imageConfidence =
+  Number(analysisResult.injury_analysis.confidence) <= 1
+    ? Number(analysisResult.injury_analysis.confidence) * 100
+    : Number(analysisResult.injury_analysis.confidence);
+
+let symptomConfidence =
+  previousPredictions.length > 0
+    ? Number(previousPredictions[0].prediction_confidence)
+    : imageConfidence;
+
+// Final integrated confidence
+let integratedConfidence =
+  (imageConfidence + symptomConfidence) / 2;
+
+// Maximum limit
+integratedConfidence = Math.min(
+  integratedConfidence,
+  95
+);
+
+// Update final confidence
+analysisResult.injury_analysis.confidence =
+  integratedConfidence;
+              // Hybrid confidence boost
+              let finalConfidence =
+              analysisResult.injury_analysis.confidence;
+          // Increase confidence for strong image prediction
+          if (finalConfidence >= 60) {
+              finalConfidence += 5;
+          }
+          else if (finalConfidence >= 40) {
+              finalConfidence += 3;
+          }
+  
+          finalConfidence = Math.min(
+              finalConfidence,
+              99
+          );
+  
+          analysisResult.injury_analysis.confidence =
+              finalConfidence;
 
       if (!analysisResult.success) {
         throw new Error(analysisResult.error || "Image analysis failed");
@@ -103,7 +154,7 @@ const response = await axios.post("http://127.0.0.1:5001/classify-injury", formD
           patientId,
           req.file.filename,
           analysisResult.injury_analysis.detected_injury,
-          analysisResult.injury_analysis.confidence,
+          finalConfidence,
           analysisResult.injury_analysis.triage_level,
           analysisResult.injury_analysis.severity_assessment,
           JSON.stringify(analysisResult.injury_analysis.recommendations),
@@ -112,11 +163,17 @@ const response = await axios.post("http://127.0.0.1:5001/classify-injury", formD
       );
 
       // Create triage result if injury detected
-      if (analysisResult.injury_analysis.triage_level !== "normal") {
-        await db.promise().query(
+      if (analysisResult.injury_analysis.triage_level) {
+        const [triageResult] = await db.promise().query(
           `INSERT INTO triage_results 
-           (patient_id, predicted_disease, severity, prediction_confidence, 
-            image_analysis_id, created_at)
+           (
+             patient_id,
+             predicted_disease,
+             severity,
+             prediction_confidence,
+             image_analysis_id,
+             created_at
+           )
            VALUES (?, ?, ?, ?, ?, NOW())`,
           [
             patientId,
@@ -128,6 +185,7 @@ const response = await axios.post("http://127.0.0.1:5001/classify-injury", formD
         );
 
         // Create appointment if urgent or emergency
+        
         if (analysisResult.injury_analysis.triage_level === "urgent" || 
             analysisResult.injury_analysis.triage_level === "emergency") {
           
@@ -137,69 +195,164 @@ const response = await axios.post("http://127.0.0.1:5001/classify-injury", formD
           );
 
           if (doctor.length > 0) {
-            const appointmentTime = new Date();
-            if (analysisResult.injury_analysis.triage_level === "emergency") {
-              appointmentTime.setHours(appointmentTime.getHours() + 1); // 1 hour for emergency
-            } else {
-              appointmentTime.setDate(appointmentTime.getDate() + 1); // Next day for urgent
-            }
 
-            await db.promise().query(
-              `INSERT INTO appointments 
-               (patient_id, doctor_id, appointment_date, status, triage_id, created_at)
-               VALUES (?, ?, ?, 'scheduled', ?, NOW())`,
-              [patientId, doctor[0].id, appointmentTime, analysisRecord.insertId]
+            const [triageTimeData] = await db.promise().query(
+              `SELECT created_at
+               FROM triage_results
+               WHERE id = ?`,
+              [triageResult.insertId]
             );
+            const triageCreatedAt = triageTimeData[0].created_at;
+
+            const baseTime = new Date(
+              triageCreatedAt.getFullYear(),
+              triageCreatedAt.getMonth(),
+              triageCreatedAt.getDate(),
+              triageCreatedAt.getHours(),
+              triageCreatedAt.getMinutes(),
+              triageCreatedAt.getSeconds()
+            ).getTime();
+let appointmentTime;
+
+// ✅ SAFE SMART SCHEDULING
+if (
+  analysisResult.injury_analysis.triage_level
+    .toLowerCase() === "emergency"
+) {
+
+  // 1 hour later
+  appointmentTime = new Date(baseTime);
+  appointmentTime.setDate(
+    appointmentTime.getDate() + 1
+  );
+
+} else {
+
+  // 24 hours later
+  appointmentTime = new Date(baseTime);
+  appointmentTime.setHours(
+    appointmentTime.getHours() + 1
+  );
+}
+
+// ✅ MYSQL SAFE FORMAT
+const year = appointmentTime.getFullYear();
+
+const month = String(
+  appointmentTime.getMonth() + 1
+).padStart(2, "0");
+
+const day = String(
+  appointmentTime.getDate()
+).padStart(2, "0");
+
+const hours = String(
+  appointmentTime.getHours()
+).padStart(2, "0");
+
+const minutes = String(
+  appointmentTime.getMinutes()
+).padStart(2, "0");
+
+const seconds = String(
+  appointmentTime.getSeconds()
+).padStart(2, "0");
+
+appointmentTime =
+  `${year}-${month}-${day} ` +
+  `${hours}:${minutes}:${seconds}`;
+
+            // Check existing active appointment
+            
+            const [existingAppointment] =
+          
+              await db.promise().query(
+                `SELECT id FROM appointments
+                 WHERE patient_id = ?
+                 AND LOWER(status)
+                 NOT IN ('completed', 'cancelled')
+                 LIMIT 1`,
+                [patientId]
+              );
+          
+            // Create only if no active appointment exists
+            if (existingAppointment.length === 0) {
+          
+              await db.promise().query(
+                `INSERT INTO appointments
+                 (
+                   patient_id,
+                   doctor_id,
+                   appointment_date,
+                   status,
+                   triage_id,
+                   created_at
+                 )
+                 VALUES (?, ?, ?, 'scheduled', ?, NOW())`,
+                [
+                  patientId,
+                  doctor[0].id,
+                  appointmentTime,
+                  triageResult.insertId
+                ]
+              );
+          
+            }
+          
           }
-        }
-      }
+            }
+          }
+// Clean up uploaded file
+fs.unlinkSync(imagePath);
 
-      // Clean up uploaded file
-      fs.unlinkSync(imagePath);
-
-      res.json({
-        success: true,
-        analysis: {
-          id: analysisRecord.insertId,
-          detected_injury: analysisResult.injury_analysis.detected_injury,
-          confidence: analysisResult.injury_analysis.confidence,
-          triage_level: analysisResult.injury_analysis.triage_level,
-          severity_assessment: analysisResult.injury_analysis.severity_assessment,
-          recommendations: analysisResult.injury_analysis.recommendations,
-          medical_guidance: analysisResult.medical_guidance,
-          detailed_analysis: analysisResult.detailed_analysis
-        },
-        message: "Image analysis completed successfully"
-      });
-
-    } catch (apiError) {
-      // Clean up uploaded file on API error
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-      
-      console.error("Image API Error:", apiError.message);
-      return res.status(500).json({
-        error: "Image analysis service unavailable",
-        message: "Unable to process image at this time. Please try again later."
-      });
-    }
-
-  } catch (error) {
-    console.error("Image Analysis Error:", error);
-    
-    // Clean up uploaded file on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
-    res.status(500).json({
-      error: "Analysis failed",
-      message: error.message || "An error occurred during image analysis"
-    });
-  }
+res.json({
+success: true,
+analysis: {
+id: analysisRecord.insertId,
+detected_injury: analysisResult.injury_analysis.detected_injury,
+confidence: analysisResult.injury_analysis.confidence,
+triage_level: analysisResult.injury_analysis.triage_level,
+severity_assessment: analysisResult.injury_analysis.severity_assessment,
+recommendations: analysisResult.injury_analysis.recommendations,
+medical_guidance: analysisResult.medical_guidance,
+detailed_analysis: analysisResult.detailed_analysis
+},
+message: "Image analysis completed successfully"
 });
 
+} catch (apiError) {
+
+// Clean up uploaded file on API error
+if (fs.existsSync(imagePath)) {
+fs.unlinkSync(imagePath);
+}
+
+console.error("Image API Error:", apiError.message);
+
+return res.status(500).json({
+error: "Image analysis service unavailable",
+message: "Unable to process image at this time. Please try again later."
+});
+
+}
+
+} catch (error) {
+
+console.error("Image Analysis Error:", error);
+
+// Clean up uploaded file on error
+if (req.file && fs.existsSync(req.file.path)) {
+fs.unlinkSync(req.file.path);
+}
+
+res.status(500).json({
+error: "Analysis failed",
+message: error.message || "An error occurred during image analysis"
+});
+
+}
+
+});
 // Get patient's image analysis history
 router.get("/history", authenticateToken, async (req, res) => {
   try {
@@ -218,11 +371,40 @@ router.get("/history", authenticateToken, async (req, res) => {
     }
 
     const [analyses] = await db.promise().query(
-      `SELECT id, detected_injury, confidence, triage_level, 
-              severity_assessment, created_at
-       FROM image_analyses 
-       WHERE patient_id = ? 
-       ORDER BY created_at DESC`,
+      `SELECT 
+          ia.id,
+          ia.detected_injury,
+          ia.confidence,
+          ia.triage_level,
+          ia.severity_assessment,
+          ia.created_at,
+    
+          tr.id AS triage_id,
+          tr.prediction_confidence,
+    
+          a.id AS appointment_id,
+          a.status AS appointment_status,
+          a.appointment_date,
+    
+          u.name AS doctor_name
+    
+       FROM image_analyses ia
+    
+       LEFT JOIN triage_results tr
+          ON ia.id = tr.image_analysis_id
+    
+       LEFT JOIN appointments a
+          ON tr.id = a.triage_id
+    
+       LEFT JOIN doctors d
+          ON a.doctor_id = d.id
+    
+       LEFT JOIN users u
+          ON d.user_id = u.id
+    
+       WHERE ia.patient_id = ?
+    
+       ORDER BY ia.created_at DESC`,
       [patient[0].id]
     );
 

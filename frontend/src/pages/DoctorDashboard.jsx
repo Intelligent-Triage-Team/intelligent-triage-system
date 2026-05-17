@@ -447,10 +447,11 @@ return (
 </span>
 </td>
 
-  <td>
-  {(p.prediction_confidence > 1
-    ? p.prediction_confidence
-    : p.prediction_confidence * 100
+<td>
+  {(
+    Number(p.prediction_confidence) > 1
+      ? Number(p.prediction_confidence)
+      : Number(p.prediction_confidence) * 100
   ).toFixed(2)}%
 </td>
 
@@ -770,6 +771,14 @@ return (
                 }}
               >
                 <p><b>Disease:</b> {item.predicted_disease}</p>
+                <p>
+  <b>Confidence:</b>{" "}
+  {(
+    Number(item.prediction_confidence) > 1
+      ? Number(item.prediction_confidence)
+      : Number(item.prediction_confidence) * 100
+  ).toFixed(2)}%
+</p>
 
 <p>
   <b>Severity:</b>
@@ -791,15 +800,6 @@ return (
   >
     {item.severity?.toUpperCase()}
   </span>
-</p>
-
-<p>
-  <b>Confidence:</b>{" "}
-  {(
-    item.prediction_confidence > 1
-      ? item.prediction_confidence
-      : item.prediction_confidence * 100
-  ).toFixed(2)}%
 </p>
 
 <p>

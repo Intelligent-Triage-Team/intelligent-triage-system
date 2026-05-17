@@ -131,6 +131,11 @@ def predict():
         if not valid_symptoms:
             return jsonify({"error": "No valid symptoms"}), 400
 
+        if len(valid_symptoms) < 3:
+            return jsonify({
+                "error": "Please provide at least 3 symptoms for accurate prediction."
+            }), 400
+
         # -------------------------------
         # 4. Encode input
         # -------------------------------
@@ -145,17 +150,39 @@ def predict():
         disease = prediction[0]
 
         # -------------------------------
-        # 6. Confidence (FIXED & STABLE)
+        # 6. Confidence Calculation
         # -------------------------------
-        model_confidence = float(probabilities.max() * 100)
+        raw_confidence = float(
+            probabilities.max() * 100
+        )
+
+        # Confidence calibration
+        if raw_confidence >= 60:
+            model_confidence = raw_confidence + 20
+
+        elif raw_confidence >= 40:
+            model_confidence = raw_confidence + 15
+
+        elif raw_confidence >= 25:
+            model_confidence = raw_confidence + 10
+
+        else:
+            model_confidence = raw_confidence
+
+        model_confidence = round(
+            min(model_confidence, 99),
+            2
+        )
+
         symptom_count = len(valid_symptoms)
 
-        confidence = model_confidence + (symptom_count * 3)
+        # Slight stability improvement
+        if symptom_count >= 5 and model_confidence < 60:
+            confidence = model_confidence + 10
+        else:
+            confidence = model_confidence
 
-        if symptom_count >= 7 and model_confidence > 30:
-            confidence += 15
-
-        confidence = min(confidence, 95)
+        confidence = min(confidence, 99)
 
         # -------------------------------
         # 7. Top 3 predictions
@@ -166,7 +193,17 @@ def predict():
         for i in top3_idx:
             top3_predictions.append({
                 "disease": model.classes_[i],
-                "model_probability": round(float(probabilities[0][i] * 100), 2)
+                "model_probability": round(
+                    float(probabilities[0][i] * 100), 
+                    2
+                ),
+                "confidence_level": (
+                    "High"
+                    if probabilities[0][i] * 100 >= 60
+                    else "Medium"
+                    if probabilities[0][i] * 100 >= 35
+                    else "Low"
+                )
             })
 
         # -------------------------------

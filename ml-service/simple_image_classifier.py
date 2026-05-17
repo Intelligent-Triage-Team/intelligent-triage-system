@@ -23,7 +23,7 @@ class SimpleInjuryClassifier:
         self.triage_mapping = {
             "Normal - No Injury": "normal",
             "Minor Cut/Scrape": "normal", 
-            "Bruise/Contusion": "normal",
+            "Bruise/Contusion": "urgent",
             "Burn - First Degree": "urgent",
             "Burn - Second Degree": "urgent",
             "Fracture/Sprain": "urgent",
@@ -38,7 +38,7 @@ class SimpleInjuryClassifier:
             "red": ["Burn - First Degree", "Rash/Skin Irritation", "Infection/Inflammation"],
             "dark": ["Bruise/Contusion", "Fracture/Sprain", "Severe Injury - Emergency"],
             "bright": ["Minor Cut/Scrape", "Burn - Second Degree"],
-            "normal": ["Normal - No Injury", "Rash/Skin Irritation"]
+            "normal": ["Minor Cut/Scrape","Bruise/Contusion","Rash/Skin Irritation", "Swelling/Edema"],
         }
     def build_model(self):
         print("Mock model structure initialized.")
@@ -49,37 +49,43 @@ class SimpleInjuryClassifier:
             img = Image.open(image_path)
             img = img.convert('RGB')
             img_array = np.array(img)
-            
+
             # Basic color analysis
             avg_red = np.mean(img_array[:, :, 0])
             avg_green = np.mean(img_array[:, :, 1])
             avg_blue = np.mean(img_array[:, :, 2])
-            
-            # Determine dominant color characteristics
-            if avg_red > avg_green + 20 and avg_red > avg_blue + 20:
+
+            # Better bruise detection
+
+            if avg_red > avg_green + 15:
                 color_type = "red"
-            elif avg_red < 100 and avg_green < 100 and avg_blue < 100:
+
+            elif avg_blue > avg_red + 10:
                 color_type = "dark"
-            elif avg_red > 150 and avg_green > 150 and avg_blue > 150:
+
+            elif avg_red < 140 and avg_green < 140 and avg_blue < 140:
+                color_type = "dark"
+
+            elif avg_red > 170 and avg_green > 170:
                 color_type = "bright"
+
             else:
                 color_type = "normal"
-            
-            # Image size analysis (mock feature)
+
+            # Image size analysis
             width, height = img.size
             size_factor = (width * height) / (224 * 224)
-            
+
             return {
                 "color_type": color_type,
                 "avg_colors": (avg_red, avg_green, avg_blue),
                 "size_factor": size_factor,
                 "brightness": np.mean(img_array)
             }
-            
+
         except Exception as e:
             print(f"Error analyzing image: {e}")
             return None
-    
     def predict_injury(self, image_path):
         """Mock prediction based on image analysis"""
         print(f"Analyzing image: {image_path}")
@@ -129,7 +135,7 @@ class SimpleInjuryClassifier:
         selected_injury = random.choices(possible_injuries, weights=weights)[0]
         
         # Generate confidence based on how "clear" the image appears
-        base_confidence = 0.6 + (features["brightness"] / 255.0) * 0.3
+        base_confidence = 0.75 + (features["brightness"] / 255.0) * 0.2
         confidence = min(0.95, max(0.5, base_confidence + random.uniform(-0.1, 0.1)))
         
         # Get triage level

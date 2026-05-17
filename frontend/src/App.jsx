@@ -56,22 +56,32 @@ const fetchNotifications = async () => {
   // ADD HERE
   useEffect(() => {
 
-  const handleScroll = () => {
-    if (window.scrollY > 50) {
-      setScrolled(true);
-    } else {
-      setScrolled(false);
-    }
-  };
-
-  window.addEventListener("scroll", handleScroll);
-
-
-  fetchNotifications(); // ✅ CALL HERE
-
-  return () => window.removeEventListener("scroll", handleScroll);
-
-}, []);
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+  
+    window.addEventListener("scroll", handleScroll);
+  
+    // FIRST LOAD
+    fetchNotifications();
+  
+    // AUTO REFRESH EVERY 5 SECONDS
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 5000);
+  
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+  
+      // CLEAR INTERVAL
+      clearInterval(interval);
+    };
+  
+  }, []);
 const token = localStorage.getItem("token");
 const [user, setUser] = useState(() => {
   try {
@@ -151,7 +161,7 @@ minHeight: "60px"
     </>
   )}
   {/* 🔔 NOTIFICATION */}
-  {user && (
+  {user?.role === "patient" && (
   <div style={{ position: "relative" }}>
     <span 
       style={{ cursor: "pointer" }} 
