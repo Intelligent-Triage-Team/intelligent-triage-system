@@ -5,7 +5,7 @@ function HistoryPage() {
   const [history, setHistory] = useState([]);
   const cancelAppointment = async (id) => {
   try {
-    const res = await API.put(`/appointment/${id}/cancel`, {}, {
+    const res = await API.put(`/appointments/${id}/cancel`, {}, {
       headers: {
         Authorization: localStorage.getItem("token")
       }
@@ -89,9 +89,9 @@ maxWidth: "600px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     borderLeft:
     
-      item.severity === "emergency"
+    (item.severity || item.triage_level) === "emergency"
         ? "5px solid #e74c3c"
-        : item.severity === "urgent"
+        :(item.severity || item.triage_level)  === "urgent"
         ? "5px solid #f39c12"
         : "5px solid #2ecc71"
   }}
@@ -107,35 +107,46 @@ onMouseLeave={(e) => {
 >
   
           <h4 style={{ marginBottom: "8px" }}>
-  {item.severity === "emergency" && "🚨 "}
-  {item.severity === "urgent" && "⚠️ "}
-  {item.severity === "normal" && "✅ "}
-  Triage Level: {item.severity.toUpperCase()}
+  {(item.severity || item.triage_level) === "emergency" && "🚨 "}
+  {(item.severity || item.triage_level) === "urgent" && "⚠️ "}
+  {(item.severity || item.triage_level) === "normal" && "✅ "}
+  Triage Level: {(item.severity || item.triage_level).toUpperCase()}
 </h4>
 
           <div style={{ marginTop: "10px" }}>
-  <p><b>🧬 Disease:</b> {item.predicted_disease}</p>
+          <p>
+  <b>🧬 Disease:</b>{" "}
+  {item.predicted_disease || item.detected_injury}
+</p>
 
-  <p>
-    <b>📊 Confidence:</b>{" "}
-    {(item.prediction_confidence > 1
-      ? item.prediction_confidence
-      : item.prediction_confidence * 100
-    ).toFixed(2)}%
-  </p>
+<p>
+  <b>📊 Confidence:</b>{" "}
+  {(
+    Number(
+      item.prediction_confidence || item.confidence
+    ) > 1
+      ? Number(
+          item.prediction_confidence || item.confidence
+        )
+      : Number(
+          item.prediction_confidence || item.confidence
+        ) * 100
+  ).toFixed(2)}%
+</p>
 </div>
 
-         <p>
-  <b>Appointment:</b>{" "}
+<p>
+  <b>🧪 Triage Date:</b>{" "}
+  {item.created_at
+  ? new Date(item.created_at).toLocaleString()
+  : "No Date"}
+</p>
+
+  <p>
+  <b>📅 Appointment:</b>{" "}
   {item.appointment_date
     ? new Date(item.appointment_date).toLocaleString()
-    : "No appointment"}
-</p>
-          <p>
-  <b>Triage Date:</b>{" "}
-  {item.created_at
-    ? new Date(item.created_at).toLocaleString()
-    : "No Date"}
+    : "Pending"}
 </p>
 
 <p>
@@ -164,7 +175,10 @@ onMouseLeave={(e) => {
     "No Appointment"
   )}
 </p>
-  <p><b>Doctor:</b> {item.doctor_name}</p>
+<p>
+  <b>Doctor:</b>{" "}
+  {item.doctor_name ? item.doctor_name : "Not Assigned"}
+</p>
 
 {/* 👇 NEW WRAPPER */}
 <div style={{

@@ -75,15 +75,24 @@ router.put("/admin/doctor/:id", authenticateToken, authorizeRole("admin"), async
 });
 router.get("/admin/users", authenticateToken, authorizeRole("admin"), async (req, res) => {
   try {
-    const [rows] = await db.promise().query(`
-  SELECT 
-    u.id,
-    u.name,
-    u.email,
-    u.role,
-    d.id AS doctor_id
-  FROM users u
-  LEFT JOIN doctors d ON u.id = d.user_id
+ const [rows] = await db.promise().query(`
+SELECT 
+  u.id,
+  u.name,
+  u.email,
+  u.role,
+  d.id AS doctor_id
+FROM users u
+LEFT JOIN doctors d ON u.id = d.user_id
+
+ORDER BY
+  CASE
+    WHEN u.role = 'admin' THEN 1
+    WHEN u.role = 'doctor' THEN 2
+    WHEN u.role = 'patient' THEN 3
+    ELSE 4
+  END,
+  u.name ASC
 `);
     res.json(rows);
   } catch (error) {
@@ -209,7 +218,24 @@ router.get("/admin/stats", authenticateToken, authorizeRole("admin"), async (req
     const [normal] = await db.promise().query(
       "SELECT COUNT(*) AS total FROM triage_results WHERE severity = 'normal'"
     );
+const [predictions] = await db.promise().query(
+  "SELECT COUNT(*) AS total FROM triage_results"
+);
+const [waiting] = await db.promise().query(`
+SELECT COUNT(*) AS total
+FROM triage_results t
+LEFT JOIN appointments a ON a.triage_id = t.id
+WHERE t.status != 'completed'
+AND a.id IS NULL
+`);
 
+const [scheduled] = await db.promise().query(
+  "SELECT COUNT(*) AS total FROM appointments WHERE status = 'scheduled'"
+);
+
+const [completed] = await db.promise().query(
+  "SELECT COUNT(*) AS total FROM triage_results WHERE status = 'completed'"
+);
     res.json({
       total_users: users[0].total,
       total_patients: patients[0].total,
@@ -217,12 +243,85 @@ router.get("/admin/stats", authenticateToken, authorizeRole("admin"), async (req
       total_appointments: appointments[0].total,
       emergency_cases: emergency[0].total,
       urgent_cases: urgent[0].total,
-      normal_cases: normal[0].total
+      normal_cases: normal[0].total,
+      total_predictions: predictions[0].total,
+      waiting_cases: waiting[0].total,
+scheduled_cases: scheduled[0].total,
+completed_cases: completed[0].total,
     });
 
   } catch (error) {
     console.error(error);
     res.status(500).send("Server Error");
+  }
+});
+router.get("/admin/doctors-availability", authenticateToken, authorizeRole("admin"), async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT 
+        d.id,
+        u.name,
+        d.specialization,
+        d.available_from,
+        d.available_to
+      FROM doctors d
+      JOIN users u ON d.user_id = u.id
+      ORDER BY u.name ASC
+    `);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.get("/admin/doctor-workload", authenticateToken, authorizeRole("admin"), async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT
+  d.id,
+  u.name,
+  d.specialization,
+  COUNT(a.id) AS total_appointments
+FROM doctors d
+JOIN users u ON d.user_id = u.id
+LEFT JOIN appointments a
+  ON a.doctor_id = d.id
+  AND a.status = 'scheduled'
+GROUP BY d.id
+ORDER BY total_appointments DESC
+    `);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.get("/admin/emergency-list", authenticateToken, authorizeRole("admin"), async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT
+        t.id,
+        u.name AS patient_name,
+        t.predicted_disease,
+        t.status,
+        t.created_at
+      FROM triage_results t
+      JOIN patients p ON t.patient_id = p.id
+      JOIN users u ON p.user_id = u.id
+      WHERE t.severity = 'emergency'
+      ORDER BY t.created_at DESC
+      LIMIT 5
+    `);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 module.exports = router;

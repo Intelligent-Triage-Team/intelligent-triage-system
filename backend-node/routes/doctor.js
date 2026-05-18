@@ -124,4 +124,66 @@ router.put("/triage/:id/complete", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Error updating case" });
   }
 });
+router.put("/patient/:id/medical", authenticateToken, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+
+    const {
+      blood_group,
+      weight,
+      height,
+      allergies,
+      chronic_disease,
+      emergency_contact
+    } = req.body;
+
+    // update main table
+    await db.promise().query(
+      `
+      UPDATE patients
+      SET blood_group = ?,
+          weight = ?,
+          height = ?,
+          allergies = ?,
+          chronic_disease = ?,
+          emergency_contact = ?
+      WHERE id = ?
+      `,
+      [
+        blood_group,
+        weight,
+        height,
+        allergies,
+        chronic_disease,
+        emergency_contact,
+        patientId
+      ]
+    );
+
+    // add history row
+    await db.promise().query(
+      `
+      INSERT INTO patient_profile_history
+      (patient_id, blood_group, weight, height, allergies, chronic_disease, emergency_contact)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        patientId,
+        blood_group,
+        weight,
+        height,
+        allergies,
+        chronic_disease,
+        emergency_contact
+      ]
+    );
+
+    res.json({ message: "Medical info updated successfully" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Update failed" });
+  }
+});
+
 module.exports = router;

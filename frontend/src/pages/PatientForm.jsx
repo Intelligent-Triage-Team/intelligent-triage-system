@@ -95,14 +95,34 @@ setLoading(true);
       navigate("/history");
     } else {
       console.error(error);
-      alert("Something went wrong");
+      alert("Please enter at least 3 symptoms before submitting.");
     }
 
   } finally {
     setLoading(false); // ✅ ALWAYS runs
   }
 };
+const symptomCount = symptoms
+  .trim()
+  .split(/[,\s]+/)
+  .filter((s) => s !== "").length;
 
+let confidenceMessage = "";
+let confidenceColor = "";
+
+if (symptomCount <= 2) {
+  confidenceMessage = "Add at least 3 symptoms to generate a reliable prediction";
+  confidenceColor = "#e74c3c";
+} else if (symptomCount <= 5) {
+  confidenceMessage = "Low confidence prediction";
+  confidenceColor = "#f39c12";
+} else if (symptomCount <= 8) {
+  confidenceMessage = "Medium confidence prediction";
+  confidenceColor = "#3498db";
+} else {
+  confidenceMessage = "High confidence prediction";
+  confidenceColor = "#27ae60";
+}
 return (
   <div
   className="container"
@@ -157,7 +177,21 @@ return (
     e.target.style.boxShadow = "none";
   }}
 />
-
+{symptoms.trim() && (
+  <div
+    style={{
+      marginTop: "10px",
+      padding: "10px",
+      borderRadius: "6px",
+      background: confidenceColor,
+      color: "white",
+      fontWeight: "600",
+      textAlign: "center"
+    }}
+  >
+    {confidenceMessage}
+  </div>
+)}
 <button
   type="submit"
   disabled={loading}

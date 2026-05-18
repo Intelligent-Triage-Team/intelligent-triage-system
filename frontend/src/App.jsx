@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";   // ADD THIS
 import "./App.css";
 import API from "./api/api";
@@ -7,20 +7,37 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import PatientForm from "./pages/PatientForm";
 import DoctorDashboard from "./pages/DoctorDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+// import AdminDashboard from "./pages/AdminDashboard";
 import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ResultPage from "./pages/patientdb/ResultPage";
 import HistoryPage from "./pages/patientdb/HistoryPage";
+import ProfilePage from "./pages/patientdb/ProfilePage";
 import AddDoctor from "./pages/doctor/AddDoctor";
 import EditDoctor from "./pages/doctor/EditDoctor";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import Chatbot from "./components/Chatbot";
+import Footer from "./components/Footer";
+import About from "./pages/About";
+import Services from "./pages/Services";
+import Contact from "./pages/Contact";
+import ServicesPortal from "./pages/ServicesPortal";
+import ImageAnalysis from './components/ImageAnalysis';
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDoctors from "./pages/admin/AdminDoctors";
+import AdminUsers from "./pages/admin/AdminUsers";
+// import AdminUsers from "./pages/admin/AdminUsers";
+import AdminEmergency from "./pages/admin/AdminEmergency";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+// import Header from "./components/Header";
 function App() {
-
+const location = useLocation();
+const isDashboard =
+  location.pathname.includes("/admin") ||
+  location.pathname.includes("/doctor");
   // ADD HERE
   const [scrolled, setScrolled] = useState(false);
 const logout = () => {
@@ -48,22 +65,32 @@ const fetchNotifications = async () => {
   // ADD HERE
   useEffect(() => {
 
-  const handleScroll = () => {
-    if (window.scrollY > 50) {
-      setScrolled(true);
-    } else {
-      setScrolled(false);
-    }
-  };
-
-  window.addEventListener("scroll", handleScroll);
-
-
-  fetchNotifications(); // ✅ CALL HERE
-
-  return () => window.removeEventListener("scroll", handleScroll);
-
-}, []);
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+  
+    window.addEventListener("scroll", handleScroll);
+  
+    // FIRST LOAD
+    fetchNotifications();
+  
+    // AUTO REFRESH EVERY 5 SECONDS
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 5000);
+  
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+  
+      // CLEAR INTERVAL
+      clearInterval(interval);
+    };
+  
+  }, []);
 const token = localStorage.getItem("token");
 const [user, setUser] = useState(() => {
   try {
@@ -81,20 +108,38 @@ const [showNotif, setShowNotif] = useState(false);
   return (
     <div>
       <ToastContainer />
+      {!isDashboard && (
    <nav 
   className={`navbar ${scrolled ? "navbar-scroll" : ""}`} 
-//   style={{
-//     display: "flex",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     padding: "15px 30px",
-// minHeight: "60px"
-  // }}
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "15px 30px",
+minHeight: "60px"
+  }}
 >
 {/* LEFT SIDE */}
-<div style={{ display: "flex", gap: "15px" }}>
+<div
+  style={{
+    display: "flex",
+    gap: "18px",
+    alignItems: "center",
+    fontSize: "17px",
+    // fontWeight: "800",
+    fontWeight: "bold",
+  }}
+>
   <Link to="/">Home</Link>
-
+  <Link to="/about">About</Link>
+  <Link to="/services">Services</Link>
+  <Link to="/contact">Contact</Link>
+  <Link to="/services-portal">Services-portal</Link>
+  <Link to="/image-analysis">image-analysis</Link>
+{/* <Link to="/about" style={linkStyle}>About</Link>
+      <Link to="/services" style={linkStyle}>Services</Link>
+      <Link to="/contact" style={linkStyle}>Contact</Link>
+      <Link to="/services-portal" style={linkStyle}>Portal</Link> */}
 
 
   {user?.role === "patient" && (
@@ -102,6 +147,9 @@ const [showNotif, setShowNotif] = useState(false);
       <Link to="/predict">New Check</Link>
       <Link to="/result">Result</Link>
       <Link to="/history">History</Link>
+      <Link to="/profile">Profile</Link>
+      <Link to="/chatbot">Chatbot</Link>
+
     </>
   )}
 
@@ -123,7 +171,7 @@ const [showNotif, setShowNotif] = useState(false);
     </>
   )}
   {/* 🔔 NOTIFICATION */}
-  {user && (
+  {user?.role === "patient" && (
   <div style={{ position: "relative" }}>
     <span 
       style={{ cursor: "pointer" }} 
@@ -234,8 +282,9 @@ const [showNotif, setShowNotif] = useState(false);
 
 </div>
 </nav>
+)}
 
-      <h1>Patient Triage System</h1>
+      {!isDashboard && <h1>Patient Triage System</h1>}
 
       <Routes>
     
@@ -245,11 +294,54 @@ const [showNotif, setShowNotif] = useState(false);
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
+        <Route path="/chatbot" element={<Chatbot />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/services-portal" element={<ServicesPortal />} />
+        <Route path="/image-analysis" element={<ImageAnalysis />} />
+
+
+
         <Route
   path="/predict"
   element={
     <ProtectedRoute role="patient">
       <PatientForm />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/doctors"
+  element={
+    <ProtectedRoute role="admin">
+      <AdminDoctors />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin/users"
+  element={
+    <ProtectedRoute adminOnly={true}>
+      <AdminUsers />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/emergency"
+  element={
+    <ProtectedRoute role="admin">
+      <AdminEmergency />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin/analytics"
+  element={
+    <ProtectedRoute role="admin">
+      <AdminAnalytics />
     </ProtectedRoute>
   }
 />
@@ -302,7 +394,17 @@ const [showNotif, setShowNotif] = useState(false);
     </ProtectedRoute>
   }
 />
+<Route
+  path="/profile"
+  element={
+    <ProtectedRoute role="patient">
+      <ProfilePage />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
+      {user && <Chatbot />}
+      {!isDashboard && <Footer />}
 
     </div>
   );

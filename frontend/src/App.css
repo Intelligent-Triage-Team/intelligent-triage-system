@@ -3,11 +3,11 @@
 
 body{
   margin:0;
-  font-family: "Segoe UI", Arial, sans-serif;
+ font-family: 'Inter', sans-serif;
 
   /* medical gradient background */
   /* background: linear-gradient(135deg,#eaf6f6,#ffffff); */
-  background: linear-gradient(90deg,#2c3e50,#1abc9c);
+  background: #f5f7fb;
 }
 
 
@@ -63,15 +63,13 @@ h2 {
 /* PAGE CONTAINER */
 
 .container{
-
- 
-    max-width: 900px;
+  max-width: 1200px;
   margin: 40px auto;
-  padding: 30px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  overflow-x: auto;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  overflow-x: hidden;
 }
 table{
   width: 100%;
@@ -281,6 +279,7 @@ tr:hover{
 }
 .chart-container {
   margin-bottom: 60px;
+
 }
 .stat-card h3 {
   font-size: 28px;
@@ -353,74 +352,311 @@ tr:hover{
   display: flex;
   align-items: center;
 }
+/* ABOUT PAGE */
 
+.card{
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  margin-bottom: 30px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
 
+.card-header{
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f1f1f1;
+  padding-bottom: 10px;
+}
 
+.card-header h2,
+.card-header h3{
+  margin: 0;
+  color: #2c3e50;
+}
 
+.card-body p{
+  color: #555;
+  line-height: 1.8;
+}
 
+/* MISSION BOXES */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* .navbar {
+.mission-stats{
   display: flex;
   gap: 20px;
-  padding: 15px;
-  background-color: #2c3e50;
+  margin-top: 30px;
+  flex-wrap: wrap;
 }
 
-.navbar a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
+.mission-box{
+  flex: 1;
+  min-width: 180px;
+  background: #f8f9fa;
+  padding: 30px 20px;
+  border-radius: 12px;
+  text-align: center;
 }
 
-.navbar a:hover {
+.mission-box h4{
+  font-size: 32px;
   color: #1abc9c;
+  margin-bottom: 10px;
 }
-.container {
-  width: 400px;
-  margin: 40px auto;
+
+/* QUICK STATUS + AI */
+
+.about-double-section{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+/* STAT ITEMS */
+
+.stat-item{
+  padding: 18px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.stat-item:last-child{
+  border-bottom: none;
+}
+
+.stat-item h4{
+  color: #2c3e50;
+  margin-bottom: 6px;
+}
+
+/* FEATURES */
+
+.feature-item{
+  display: flex;
+  gap: 14px;
+  margin-top: 20px;
+  align-items: flex-start;
+}
+
+.feature-icon{
+  font-size: 22px;
+}
+
+/* ACHIEVEMENTS */
+
+.achievements-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap: 20px;
+}
+
+.achievement-item{
+  background: #f8f9fa;
   padding: 20px;
-  background: #f4f6f8;
-  border-radius: 8px;
-  box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
 }
 
-.container input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 12px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
+/* MOBILE */
+
+@media(max-width: 768px){
+
+  .about-double-section{
+    grid-template-columns: 1fr;
+  }
+
+  .mission-stats{
+    flex-direction: column;
+  }
+
+}
+/* =========================
+   SERVICES PAGE
+========================= */
+
+
+/* ========== PAGE WRAPPER ========== */
+/* ========== GLOBAL LAYOUT ========== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f7fb;
+  /* overflow: hidden; */
 }
 
-.container input:focus {
-  outline: none;
-  border-color: #1abc9c;
-  box-shadow: 0 0 5px rgba(26, 188, 156, 0.4);
-}
+/* ========== SIDEBAR ========== */
+.admin-sidebar {
+  width: 260px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
 
-.container button {
-  width: 100%;
-  padding: 10px;
-  background: #1abc9c;
-  border: none;
+  background: linear-gradient(to bottom, #111827, #1f2937);
   color: white;
-  font-weight: bold;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 24px 18px;
+}
+.admin-sidebar {
+  width: 260px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 24px 18px;
+  box-sizing: border-box;
+}
+/* logo */
+.sidebar-logo {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.sidebar-subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+/* nav */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+   margin-top: auto;
+}
+
+.sidebar-nav button {
+  background: transparent;
+  border: none;
+  color: #e5e7eb;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar-nav button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* logout */
+.logout-btn {
+  background: #ef4444;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+}
+
+/* ========== MAIN ========== */
+.admin-main {
+  margin-left: 260px;
+  width: calc(100% - 260px);
+  padding: 24px;
+  overflow-y: auto;
+}
+ ========== HEADER ========== */
+.header-section h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.header-section p {
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* ========== SECTIONS ========== */
+.section {
+  margin-top: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+/* ========== GRID SYSTEM ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.triage-grid,
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* ========== CARD BASE (IMPORTANT FIX) ========== */
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+/* card text */
+.card h3 {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.card p {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+/* ========== TRIAGE COLORS (FIXED PROPERLY) ========== */
+.card.danger {
+  border-left: 4px solid #ef4444;
+}
+
+.card.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.card.success {
+  border-left: 4px solid #22c55e;
+}
+
+/* ========== FLOW COLORS ========== */
+.card.waiting {
+  background: #fef9c3;
+}
+
+.card.scheduled {
+  background: #dbeafe;
+}
+
+.card.completed {
+  background: #dcfce7;
+}
+
+/* ========== CHART ========== */
+.chart-box {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  width: fit-content;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .container button:hover {
