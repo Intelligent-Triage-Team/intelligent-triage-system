@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";   // ADD THIS
 import "./App.css";
 import API from "./api/api";
@@ -7,7 +7,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import PatientForm from "./pages/PatientForm";
 import DoctorDashboard from "./pages/DoctorDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+// import AdminDashboard from "./pages/AdminDashboard";
 import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -26,9 +26,18 @@ import Services from "./pages/Services";
 import Contact from "./pages/Contact";
 import ServicesPortal from "./pages/ServicesPortal";
 import ImageAnalysis from './components/ImageAnalysis';
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDoctors from "./pages/admin/AdminDoctors";
+import AdminUsers from "./pages/admin/AdminUsers";
+// import AdminUsers from "./pages/admin/AdminUsers";
+import AdminEmergency from "./pages/admin/AdminEmergency";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 // import Header from "./components/Header";
 function App() {
-
+const location = useLocation();
+const isDashboard =
+  location.pathname.includes("/admin") ||
+  location.pathname.includes("/doctor");
   // ADD HERE
   const [scrolled, setScrolled] = useState(false);
 const logout = () => {
@@ -99,6 +108,7 @@ const [showNotif, setShowNotif] = useState(false);
   return (
     <div>
       <ToastContainer />
+      {!isDashboard && (
    <nav 
   className={`navbar ${scrolled ? "navbar-scroll" : ""}`} 
   style={{
@@ -272,8 +282,9 @@ minHeight: "60px"
 
 </div>
 </nav>
+)}
 
-      <h1>Patient Triage System</h1>
+      {!isDashboard && <h1>Patient Triage System</h1>}
 
       <Routes>
     
@@ -297,6 +308,40 @@ minHeight: "60px"
   element={
     <ProtectedRoute role="patient">
       <PatientForm />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/doctors"
+  element={
+    <ProtectedRoute role="admin">
+      <AdminDoctors />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin/users"
+  element={
+    <ProtectedRoute adminOnly={true}>
+      <AdminUsers />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/emergency"
+  element={
+    <ProtectedRoute role="admin">
+      <AdminEmergency />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin/analytics"
+  element={
+    <ProtectedRoute role="admin">
+      <AdminAnalytics />
     </ProtectedRoute>
   }
 />
@@ -359,7 +404,7 @@ minHeight: "60px"
 />
       </Routes>
       {user && <Chatbot />}
-      <Footer />
+      {!isDashboard && <Footer />}
 
     </div>
   );
