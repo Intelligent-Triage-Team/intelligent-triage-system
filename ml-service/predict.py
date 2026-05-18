@@ -101,7 +101,7 @@ def health():
 def predict():
     try:
         data = request.get_json()
-
+        print(request.json)
         # -------------------------------
         # 1. Validate input
         # -------------------------------
@@ -253,6 +253,7 @@ def predict():
         })
 
     except Exception as e:
+        print("FLASK ERROR:", str(e))
         return jsonify({"error": str(e)}), 500
 
 #  =====================================================

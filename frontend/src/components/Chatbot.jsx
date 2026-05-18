@@ -126,7 +126,7 @@ const Chatbot = () => {
         } catch (error) {
             console.error("Chat error:", error);
             setIsTyping(false);
-            setMessages(prev => [...prev, { text: "Sorry, I'm having trouble connecting right now.", sender: 'ai' }]);
+            setMessages(prev => [...prev, { text: "Unable to analyze symptoms right now. Please try again shortly.", sender: 'ai' }]);
         }
     };
 
@@ -208,7 +208,7 @@ const Chatbot = () => {
                         <div className="d-flex align-items-center">
                             <i className="fas fa-robot fs-4 me-2"></i>
                             <div>
-                                <h3 className="mb-0">ግዕዝ Health Assistant</h3>
+                                <h3 className="mb-0">Health Assistant</h3>
                                 <small className="text-white-50">Powered by Advanced NLP</small>
                             </div>
                         </div>

@@ -1,8 +1,9 @@
 import spacy
 import re
-
+from spellchecker import SpellChecker
 nlp = spacy.load("en_core_web_sm")
-
+nlp = spacy.load("en_core_web_sm")
+spell = SpellChecker()
 # ==========================
 # Symptom dictionary
 # ==========================
@@ -71,9 +72,27 @@ EMERGENCY_WORDS = {
     "collapse": "unconsciousness"
 }
 
+# ==========================
+# Text normalization
+# ==========================
+def normalize_text(text):
+    corrected_words = []
 
+    for word in text.split():
+
+        # keep medical underscore words
+        if "_" in word:
+            corrected_words.append(word)
+            continue
+
+        corrected = spell.correction(word)
+
+        corrected_words.append(corrected if corrected else word)
+
+    return " ".join(corrected_words)
 def extract_symptoms(text):
     text = text.lower()
+    text = normalize_text(text)
 
     # keep _ and ()
     text = re.sub(r"[^a-zA-Z0-9_\s()]", " ", text)

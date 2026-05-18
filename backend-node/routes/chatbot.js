@@ -3,7 +3,17 @@ const router = express.Router();
 const authenticateToken = require("../middleware/auth");
 const db = require("../database/db");
 const axios = require("axios");
+const searchWebMedicalInfo = async (query) => {
+    try {
+        const response = await axios.get(
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
+        );
 
+        return response.data.extract;
+    } catch (error) {
+        return null;
+    }
+};
 // Advanced Holistic & Emotional Knowledge Base
 const healthKnowledge = {
     // Physical Conditions
@@ -45,7 +55,10 @@ const getChatResponse = async (message, history = [], userId) => {
 
     // 2. 🧠 Try ML prediction (MAIN LOGIC)
     try {
-        const mlResponse = await axios.post("http://127.0.0.1:5000/predict", { text: message });
+const mlResponse = await axios.post(
+    "http://127.0.0.1:5000/predict",
+    { text: message }
+);
         const result = mlResponse.data;
 
         if (result?.predicted_disease) {
@@ -54,7 +67,7 @@ Triage: ${result.triage_level}.
 Advice: Please consider seeing a doctor.`;
         }
     } catch (e) {
-        console.log("ML not available");
+        console.log("ML server connection failed:", e.message);
     }
 
     // 3. ❤️ Emotional support
@@ -68,7 +81,43 @@ Advice: Please consider seeing a doctor.`;
     }
 
     // 5. 🧠 Smart fallback (IMPORTANT)
-    return "Can you explain your symptoms or feelings a bit more so I can help you better?";
+ // Sleep problems
+if (
+    msg.includes("sleep") ||
+    msg.includes("insomnia") ||
+    msg.includes("can't sleep") ||
+    msg.includes("cannot sleep")
+) {
+    return "Difficulty sleeping may be caused by stress, anxiety, caffeine, or poor sleep habits. Try reducing screen time, avoid coffee at night, and relax before sleeping.";
+}
+
+// Vomiting
+if (
+    msg.includes("vomit") ||
+    msg.includes("vomiting") ||
+    msg.includes("nausea")
+) {
+    return "Vomiting may be caused by infection, food poisoning, or stomach irritation. Drink plenty of fluids and monitor your condition.";
+}
+
+// Headache
+if (msg.includes("headache")) {
+    return "Headaches can occur due to stress, dehydration, or illness. Drink water and get some rest.";
+}
+
+// Fever
+if (msg.includes("fever")) {
+    return "Fever may indicate infection. Stay hydrated and monitor your temperature.";
+}
+
+// Web fallback
+const webInfo = await searchWebMedicalInfo(message);
+
+if (webInfo) {
+    return webInfo;
+}
+
+return "Please describe your symptoms in more detail for better medical guidance.";
 };
 
 router.post("/chat", authenticateToken, async (req, res) => {
